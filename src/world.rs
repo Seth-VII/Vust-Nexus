@@ -4,13 +4,18 @@ pub struct World
 {
     pub entities: Vec<Entity>,
     active_entities: Vec<Entity>,
+
+    collected_scorepoints: i32,
 }
 impl World
 {
     pub fn new() -> Self
     {
-        Self {entities: Vec::new(),active_entities: Vec::new()}
+        Self {entities: Vec::new(),active_entities: Vec::new(), collected_scorepoints: 0}
     }
+
+    pub fn get_collected_scorepoints(&self) -> i32 { return self.collected_scorepoints; }
+    pub fn add_scorepoints(&mut self, value: i32) { self.collected_scorepoints += value;}
 
     pub fn update_actives(&mut self)
     {

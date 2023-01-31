@@ -73,7 +73,7 @@ async fn main() {
         }
 
         game.draw();
-
+        game.update_score();
         //println!("Active Entities: {}", world.get_actives().len());
         draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, BLACK);
         //let world_entity = world.get_entity_by_tag("Player").unwrap();
@@ -85,6 +85,9 @@ async fn main() {
 
 pub struct Game
 {
+    local_score: i32,
+    last_score: i32,
+
     world: World,
     misslepool: MisslePool,
     enemy_spawner: EnemySpawner,
@@ -100,15 +103,19 @@ impl Game {
         let mut enemy_spawner = EnemySpawner::new();
         let mut player = Player::new(&mut world);
         let mut player_weapon = Weapon::new("Player Weapn", "Player Weapon",&mut world);
-
+        
         
         misslepool.create_pool(512, &mut world);
-        enemy_spawner.create_pool(128, &mut world);
-        enemy_spawner.init();
-        player.init();
-        player_weapon.init();
+        enemy_spawner.create_pool(32, &mut world);
+        enemy_spawner.init(&mut world);
+        player.init(&mut world);
+        player_weapon.init(&mut world);
+        player_weapon.set_stats(2.0, 20.0, 300.0);
 
-        Self {  
+        Self {
+            local_score: 0,  
+            last_score: 0,
+
             world: world,
             misslepool: misslepool,
             enemy_spawner: enemy_spawner,
@@ -123,6 +130,7 @@ impl Game {
         
         self.misslepool.update(&mut self.world);
         self.enemy_spawner.update(&mut self.world);
+        self.enemy_spawner.enemy_shoot(&mut self.misslepool, &mut self.world);
         self.player.update(&mut self.world);
         
 
@@ -151,5 +159,12 @@ impl Game {
         self.enemy_spawner.draw();
         self.player.draw();
         self.player_weapon.draw();
+
+        draw_text(format!("Local Score: {}", self.local_score).as_str(), GAME_SIZE_X as f32 * 0.5, 60.0, 60.0, BLACK);
+    }
+
+    pub fn update_score(&mut self)
+    {
+        self.local_score = self.world.get_collected_scorepoints();
     }
 }

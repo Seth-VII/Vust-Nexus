@@ -18,7 +18,7 @@ impl Player
 }
 impl GameObject for Player
 {
-    fn init(&mut self) {
+    fn init(&mut self, world: &mut World) {
         self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.transform.set_size(vec2(60.0,60.0));
         self.entity.entity_params.speed = 200.0;
@@ -106,7 +106,8 @@ impl Collision for Player
         match entity.tag.as_str()
         {
             "Enemy" => {
-                entity.transform = Transform::zero();
+                entity.entity_params.health = 0.0;
+                self.entity.entity_params.health -= entity.entity_params.damage / self.entity.entity_params.armor;
             }
             _ => {}
         }

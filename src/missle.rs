@@ -53,7 +53,7 @@ impl MisslePool
 }
 impl GameObject for MisslePool
 {
-    fn init(&mut self) {
+    fn init(&mut self, world: &mut World) {
     }
     fn update(&mut self, world: &mut World) {
         self.active_pool = self.pool.clone();
@@ -114,10 +114,11 @@ impl Missle
 
     pub fn setup_missle(&mut self,from_weapon: Entity, dir: Vec2)
     {
-        self.entity.transform.set_size( vec2(30.0,30.0));
+        self.entity.transform.set_size( vec2(20.0,20.0));
         self.entity.transform.set_scale( 1.0);
         self.entity.transform.set_position(from_weapon.transform.position);
         self.entity.entity_params = from_weapon.entity_params.clone();
+        self.entity.tag = format!("{} Missle", from_weapon.tag);
         self.weapon = Some(from_weapon);
         self.dir = dir;
     }
@@ -138,7 +139,7 @@ impl Missle
 }
 impl GameObject for Missle
 {
-    fn init(&mut self) {
+    fn init(&mut self, world: &mut World) {
         
     }
     fn update(&mut self, world: &mut World) {
@@ -172,7 +173,7 @@ impl GameObject for Missle
         {
             return;
         }
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, RED);
+        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, BLACK);
     }
 }
 impl Collision for Missle
@@ -186,8 +187,16 @@ impl Collision for Missle
         match entity.tag.as_str()
         {
             "Enemy" => {
-                self.reset_missle();
-                entity.transform = Transform::zero();
+                if self.entity.tag.contains("Player")
+                {
+                    self.reset_missle();
+                }
+            },
+            "Player" => {
+                if self.entity.tag.contains("Enemy")
+                {
+                    self.reset_missle();
+                }
             },
             _ => {}
         }

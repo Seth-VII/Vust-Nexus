@@ -7,6 +7,8 @@ pub struct Weapon
     parent: Option<Entity>,
     sprite: Texture2D,
     direction: Vec2,
+
+    cooldown_t: f32,
 }
 impl Weapon
 {
@@ -17,6 +19,7 @@ impl Weapon
             parent: None,
             sprite: Texture2D::empty(),
             direction: vec2(0.0, 0.0),
+            cooldown_t: 0.0,
         }
     }
     pub fn set_parent(&mut self, parent: Option<Entity>)
@@ -26,14 +29,26 @@ impl Weapon
 
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
     {
-        misslepool.fire_missle( self.entity.clone(), self.direction, world);
+        if self.cooldown_t <= 0.0
+        {
+            misslepool.fire_missle( self.entity.clone(), self.direction, world);
+            self.cooldown_t = 2.0
+        }else  {
+            self.cooldown_t -= self.entity.entity_params.firerate * get_frame_time();
+        }
+    }
+    pub fn set_stats(&mut self, dmg: f32, firerate: f32, firespeed: f32)
+    {
+        self.entity.entity_params.damage = dmg;
+        self.entity.entity_params.firerate = firerate;
+        self.entity.entity_params.firespeed = firespeed;
     }
 }
 impl GameObject for Weapon
 {
-    fn init(&mut self) {
+    fn init(&mut self, world: &mut World) {
         self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
-        self.entity.transform.set_size(vec2(50.0,50.0));
+        self.entity.transform.set_size(vec2(20.0,20.0));
         self.entity.entity_params.firespeed = 100.0;
     }
     fn update(&mut self, world: &mut World) {
@@ -81,6 +96,6 @@ impl GameObject for Weapon
     }
     fn draw(&mut self) {
         
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, PURPLE);
+        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
     }
 }

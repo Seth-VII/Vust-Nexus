@@ -31,6 +31,7 @@ impl MisslePool
                 self.pool[slot].fire();
                 self.active_pool.push(self.pool[slot].clone());
                 world.set_entity(&mut self.pool[slot].entity);
+                //println!("Missle tag: {}",  self.pool[slot].entity.tag );
             }
             None => {
                 println!("No Free Missle Slot Found!");

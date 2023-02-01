@@ -144,10 +144,6 @@ impl Game {
     }
     pub fn late_update(&mut self)
     {
-        for enemy in self.enemy_spawner.pool.iter_mut() {
-
-            self.player.on_collision(&mut enemy.entity);
-        }
         self.misslepool.late_update(&mut self.world);
         self.enemy_spawner.late_update(&mut self.world);
         self.player.late_update(&mut self.world);

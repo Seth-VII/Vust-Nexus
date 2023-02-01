@@ -35,8 +35,9 @@ impl Transform
     pub fn set_position(&mut self, new_position: Vec2)
     {
         self.position = new_position;
-        self.rect.x = new_position.x;
-        self.rect.y = new_position.y;
+        let centered = self.get_centered_position();
+        self.rect.x = centered.x;
+        self.rect.y = centered.y;
     }
     pub fn set_size(&mut self, new_size: Vec2)
     {
@@ -69,6 +70,12 @@ pub struct Entity
     pub is_active: bool,
     pub collision_is_enabled: bool,
     pub sprite_is_active: bool,
+
+
+    rect_color: Color,
+    hit_color: Color,
+    hit_feedback_duration: f32,
+    pub hit_feedback_timer: f32,
 }
 impl Entity
 {
@@ -83,6 +90,11 @@ impl Entity
             entity_params: EntityParams::default(),
             collision_is_enabled: true,
             sprite_is_active: true,
+
+            rect_color: WHITE,
+            hit_color: WHITE,
+            hit_feedback_duration: 0.05,
+            hit_feedback_timer: 0.0,
         };
         world.add_entity(&mut instance);
         instance
@@ -91,6 +103,25 @@ impl Entity
     pub fn SetActive(&mut self, state: bool)
     {
         self.is_active = state;
+    }
+
+    pub fn get_rect_color(&self) -> Color {self.hit_color}
+    pub fn set_rect_color(&mut self, color: Color){self.rect_color = color;}
+    pub fn hit(&mut self, entity_params: &EntityParams)
+    {
+        self.hit_feedback_timer = self.hit_feedback_duration;
+        self.entity_params.health -= 1.0;
+    }
+    pub fn hit_cooldown(&mut self)
+    {
+        if self.hit_feedback_timer > 0.0
+        {
+            self.hit_feedback_timer -= get_frame_time();
+            self.hit_color = RED;
+        }else
+        {
+            self.hit_color = self.rect_color;
+        }
     }
 }
 

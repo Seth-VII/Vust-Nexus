@@ -92,10 +92,6 @@ pub struct Enemy
 
     pub variant: EnemyVariant,
 
-    rect_color: Color,
-    hit_color: Color,
-    hit_feedback_duration: f32,
-    hit_feedback_timer: f32,
 }
 impl Enemy
 {
@@ -106,18 +102,10 @@ impl Enemy
             entity: Entity::new("Enemy", "Enemy", world), 
             sprite: Texture2D::empty(), 
             variant: EnemyVariant::get_variant(EnemyType::Default, world),
-            rect_color: GREEN,
-            hit_color: GREEN,
-            hit_feedback_duration: 0.2,
-            hit_feedback_timer: 0.0,
         }
     }
     
-    fn hit(&mut self, entity_params: &EntityParams)
-    {
-        self.hit_feedback_timer = self.hit_feedback_duration;
-        self.entity.entity_params.health -= 1.0;
-    }
+
     fn reset(&mut self)
     {
         self.entity.entity_params = EntityParams::default();
@@ -129,7 +117,7 @@ impl Enemy
         self.variant = EnemyVariant::get_variant(e_type, world);
         self.entity.entity_params = self.variant.params;
         self.entity.transform.set_size(self.variant.size);
-        self.rect_color = self.variant.color;
+        self.entity.set_rect_color(self.variant.color);
     }
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
     {
@@ -163,8 +151,11 @@ impl GameObject for Enemy
             world.set_entity(&mut self.entity);
             return;
         }
+
+        self.entity.hit_cooldown();
+
         // MOVEMENT
-        println!("active {}", self.entity.is_active);
+        //println!("active {}", self.entity.is_active);
         let dir = (self.entity.transform.position - world.get_entity_by_tag("Player").as_ref().unwrap().transform.position).normalize();
         let position = self.entity.transform.position - (dir * self.entity.entity_params.speed * get_frame_time());
         self.entity.transform.set_position(position);
@@ -179,14 +170,7 @@ impl GameObject for Enemy
             None => {}
         }
 
-        if self.hit_feedback_timer > 0.0
-        {
-            self.hit_feedback_timer -= get_frame_time();
-            self.hit_color = RED;
-        }else
-        {
-            self.hit_color = self.rect_color;
-        }
+       
 
     }
     fn late_update(&mut self, world: &mut World) {
@@ -203,7 +187,7 @@ impl GameObject for Enemy
         {
             return;
         }
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.hit_color);
+        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
         draw_text(
             format!("E: {} | HP : {}",self.enemy_id , self.entity.entity_params.health).as_str(), 
             self.entity.transform.position.x, 
@@ -230,13 +214,13 @@ impl Collision for Enemy
         match entity.tag.as_str()
         {
             "Player" => {
-
+                self.entity.entity_params.health = 0.0;
             }
             "Player Weapon Missle" => {
                 //println!("HIT!!!");
-                if self.hit_feedback_timer <= 0.0
+                if self.entity.hit_feedback_timer <= 0.0
                 {
-                    self.hit(&entity.entity_params);
+                    self.entity.hit(&entity.entity_params);
                 }
 
             }

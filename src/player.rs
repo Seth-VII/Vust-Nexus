@@ -4,6 +4,7 @@ pub struct Player
 {
     pub entity: Entity,
     sprite: Texture2D,
+
 }
 impl Player
 {
@@ -13,74 +14,65 @@ impl Player
             entity: Entity::new("Player", "Player", world), 
             sprite: Texture2D::empty(), 
         }
-    }
-    
+    }  
 }
 impl GameObject for Player
 {
     fn init(&mut self, world: &mut World) {
-        self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.transform.set_size(vec2(60.0,60.0));
+        self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X as f32 * 0.5,self.entity.transform.position.y + GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.entity_params.speed = 200.0;
+        self.entity.set_rect_color(BLACK);
     }
     fn update(&mut self, world: &mut World) {
         
+
+        self.entity.hit_cooldown();
+
         // MOVEMENT
         if is_key_down(KeyCode::W)
         {
-            let position = self.entity.transform.position - (vec2(0.0, self.entity.entity_params.speed) * get_frame_time()); 
-            let updated_rect = Rect::new(
-                position.x, 
-                position.y, 
-                self.entity.transform.rect.w,
-                self.entity.transform.rect.h
-            );
-            if !resolve_windowborder(updated_rect)
+            let mut updated_transform = self.entity.transform;
+            let new_position = self.entity.transform.position - (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
+            updated_transform.set_position(new_position);
+
+            if !resolve_windowborder(updated_transform.rect)
             {
-                self.entity.transform.set_position(position);
+                self.entity.transform.set_position(updated_transform.position);
             }
         }
         if is_key_down(KeyCode::S)
         {
-            let position = self.entity.transform.position + (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
-            let updated_rect = Rect::new(
-                position.x, 
-                position.y + self.entity.transform.rect.h, 
-                self.entity.transform.rect.w,
-                self.entity.transform.rect.h
-            );
-            if !resolve_windowborder(updated_rect)
+            let mut updated_transform = self.entity.transform;
+            let new_position = self.entity.transform.position + (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
+            updated_transform.set_position(new_position);
+
+            if !resolve_windowborder(updated_transform.rect)
             {
-                self.entity.transform.set_position(position);
+                self.entity.transform.set_position(updated_transform.position);
             }
         }
 
         if is_key_down(KeyCode::A)
         {
-            let position = self.entity.transform.position - (vec2(self.entity.entity_params.speed, 0.0) * get_frame_time()); 
-            let updated_rect = Rect::new(
-                position.x, 
-                position.y, 
-                self.entity.transform.rect.w,
-                self.entity.transform.rect.h
-            );
-            if !resolve_windowborder(updated_rect)
+            let mut updated_transform = self.entity.transform;
+            let new_position = self.entity.transform.position - vec2(self.entity.entity_params.speed, 0.0) * get_frame_time();
+            updated_transform.set_position(new_position);
+
+            if !resolve_windowborder(updated_transform.rect)
             {
-                self.entity.transform.set_position(position);
+                self.entity.transform.set_position(updated_transform.position);
             }
         }
         if is_key_down(KeyCode::D)
         {
-            let position = self.entity.transform.position + (vec2(self.entity.entity_params.speed, 0.0) * get_frame_time()); 
-            let updated_rect = Rect::new(
-                position.x + self.entity.transform.rect.w, 
-                position.y, 
-                self.entity.transform.rect.w,
-                self.entity.transform.rect.h
-            );
-            if !resolve_windowborder(updated_rect)
+            let mut updated_transform = self.entity.transform;
+            let new_position = self.entity.transform.position + vec2(self.entity.entity_params.speed, 0.0) * get_frame_time();
+            updated_transform.set_position(new_position);
+
+            if !resolve_windowborder(updated_transform.rect)
             {
-                self.entity.transform.set_position(position);
+                self.entity.transform.set_position(updated_transform.position);
             }
         }
 
@@ -88,12 +80,15 @@ impl GameObject for Player
         world.set_entity(&mut self.entity);
     }
     fn late_update(&mut self, world: &mut World) {
-        
+        for entity in world.get_actives().iter_mut()
+        {
+            self.on_collision( entity);
+        }
     }
     fn draw(&mut self) {
         
 
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, BLACK);
+        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
     }
 }
 impl Collision for Player
@@ -106,8 +101,11 @@ impl Collision for Player
         match entity.tag.as_str()
         {
             "Enemy" => {
-                entity.entity_params.health = 0.0;
-                self.entity.entity_params.health -= entity.entity_params.damage / self.entity.entity_params.armor;
+                self.entity.hit(&entity.entity_params);
+            }
+            "Enemy Weapon Missle" => {
+                println!("HIT");
+                self.entity.hit(&entity.entity_params);
             }
             _ => {}
         }

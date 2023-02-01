@@ -182,7 +182,7 @@ impl GameObject for Enemy
             None => {}
         }
     }
-    fn draw(&mut self) {
+    fn draw(&mut self, viewspace: &Viewspace) {
         if !self.entity.is_active || !self.entity.sprite_is_active
         {
             return;
@@ -197,7 +197,7 @@ impl GameObject for Enemy
         match &mut self.variant.weapon
         {
             Some(weapon) => {
-                weapon.draw();
+                weapon.draw(viewspace);
             }
             None => {}
         }

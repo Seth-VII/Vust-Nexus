@@ -14,6 +14,9 @@ pub use gameobject::*;
 mod collision;
 pub use collision::*;
 
+mod renderer;
+pub use renderer::*;
+
 mod entity;
 pub use entity::*;
 
@@ -59,7 +62,7 @@ async fn main() {
     let mut game = Game::init();
 
     loop {
-        clear_background(WHITE);
+        clear_background(BLACK);
         
         game.update();
         
@@ -88,6 +91,8 @@ pub struct Game
     local_score: i32,
     last_score: i32,
 
+    
+    viewspace: Viewspace,
     world: World,
     misslepool: MisslePool,
     enemy_spawner: EnemySpawner,
@@ -98,6 +103,7 @@ impl Game {
     
     pub fn init() -> Self
     {
+        let viewspace = Viewspace::new();
         let mut world = World::new();
         let mut misslepool = MisslePool::new();
         let mut enemy_spawner = EnemySpawner::new();
@@ -116,6 +122,7 @@ impl Game {
             local_score: 0,  
             last_score: 0,
 
+            viewspace: viewspace,
             world: world,
             misslepool: misslepool,
             enemy_spawner: enemy_spawner,
@@ -127,7 +134,8 @@ impl Game {
     pub fn update(&mut self)
     {
         self.world.update_actives();
-        
+        self.viewspace.set_position(self.player.entity.transform.position);
+
         self.misslepool.update(&mut self.world);
         self.enemy_spawner.update(&mut self.world);
         self.enemy_spawner.enemy_shoot(&mut self.misslepool, &mut self.world);
@@ -151,10 +159,12 @@ impl Game {
     }
     pub fn draw(&mut self)
     {
-        self.misslepool.draw();
-        self.enemy_spawner.draw();
-        self.player.draw();
-        self.player_weapon.draw();
+        self.viewspace.draw();
+        self.misslepool.draw(&self.viewspace);
+        self.enemy_spawner.draw(&self.viewspace);
+
+        self.player.draw(&self.viewspace);
+        self.player_weapon.draw(&self.viewspace);
 
         draw_text(format!("Local Score: {}", self.local_score).as_str(), GAME_SIZE_X as f32 * 0.5, 60.0, 60.0, BLACK);
     }

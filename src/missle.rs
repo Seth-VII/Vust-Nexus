@@ -85,10 +85,10 @@ impl GameObject for MisslePool
             world.set_entity(&mut missle.entity);
         }
     }
-    fn draw(&mut self) {
+    fn draw(&mut self, viewspace: &Viewspace) {
         for missle in self.pool.iter_mut()
         {
-            missle.draw();
+            missle.draw(viewspace);
         }
     }
 }
@@ -169,7 +169,7 @@ impl GameObject for Missle
         }
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, viewspace: &Viewspace) {
         if !self.entity.is_active
         {
             return;

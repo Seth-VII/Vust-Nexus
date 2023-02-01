@@ -138,11 +138,14 @@ impl GameObject for EnemySpawner
             }
         }
     }
-    fn draw(&mut self) {
+    fn draw(&mut self, viewspace: &Viewspace) {
         draw_text(format!("Next Enemy: {}", self.timer).as_str(), 30.0, 30.0, 16.0, BLACK);
         for enemy in self.active_pool.iter_mut()
         {
-            self.pool[enemy.enemy_id].draw();
+            if inside_visible_area(self.pool[enemy.enemy_id].entity.transform.rect, viewspace.get_position(), viewspace.get_radius())
+            {
+                self.pool[enemy.enemy_id].draw(&viewspace);
+            }
         }
     }
 }

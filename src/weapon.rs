@@ -94,7 +94,7 @@ impl GameObject for Weapon
     fn late_update(&mut self, world: &mut World) {
         
     }
-    fn draw(&mut self) {
+    fn draw(&mut self, viewspace: &Viewspace) {
         
         draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
     }

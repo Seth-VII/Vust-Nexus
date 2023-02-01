@@ -85,7 +85,7 @@ impl GameObject for Player
             self.on_collision( entity);
         }
     }
-    fn draw(&mut self) {
+    fn draw(&mut self, viewspace: &Viewspace) {
         
 
         draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());

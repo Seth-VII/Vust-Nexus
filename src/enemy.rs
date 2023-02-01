@@ -10,6 +10,7 @@ pub enum EnemyType {
 pub struct EnemyVariant 
 {
     params: EntityParams,
+    sprite: Texture2D,
     size: Vec2,
     color: Color,
     weapon: Option<Weapon>,
@@ -28,40 +29,43 @@ impl EnemyVariant
     }
     fn default_variant(world: &mut World) -> Self
     {
+        let sprite = world.assets.get_asset_by_id(1).get_texture_data();
         let mut params = EntityParams::default();
         params.health = 10.0;
         params.speed = 50.0;
         params.armor = 2.0;
         params.damage = 2.0;
 
-        let size = vec2(60.0, 60.0);
-        let color = GREEN;
+        let size = vec2(80.0, 80.0);
+        let color = WHITE;
 
         let mut weapon = None;
 
         let points = 20;
 
-        Self { params: params, size: size, color: color, weapon: weapon, points: points }
+        Self { params: params, sprite: sprite, size: size, color: color, weapon: weapon, points: points }
     }
     fn heavy_variant(world: &mut World) -> Self
     {
+        let sprite = world.assets.get_asset_by_id(0).get_texture_data();
         let mut params = EntityParams::default();
         params.health = 20.0;
         params.speed = 30.0;
         params.armor = 5.0;
         params.damage = 3.0;
 
-        let size = vec2(80.0, 80.0);
-        let color = RED;
+        let size = vec2(120.0, 120.0);
+        let color = WHITE;
 
         let mut weapon = None;
 
         let points = 50;
 
-        Self { params: params, size: size, color: color, weapon: weapon, points: points }
+        Self { params: params, sprite: sprite, size: size, color: color, weapon: weapon, points: points }
     }
     fn gunner_variant(world: &mut World) -> Self
     {
+        let sprite = world.assets.get_asset_by_id(2).get_texture_data();
         let mut params = EntityParams::default();
         params.health = 5.0;
         params.speed = 40.0;
@@ -70,15 +74,15 @@ impl EnemyVariant
         params.firerate = 1.0;
         params.firespeed = 200.0;
 
-        let size = vec2(40.0, 40.0);
-        let color = PURPLE;
+        let size = vec2(80.0, 80.0);
+        let color = WHITE;
 
         let mut weapon = Weapon::new("Gunner Weapon", "Enemy Weapon", world);
         weapon.set_stats(params.damage, params.firerate, params.firespeed);
 
         let points = 10;
 
-        Self { params: params, size: size, color: color, weapon: Some(weapon), points: points }
+        Self { params: params, sprite: sprite, size: size, color: color, weapon: Some(weapon), points: points }
     }
 }
 
@@ -88,7 +92,6 @@ pub struct Enemy
 {
     pub enemy_id: usize,
     pub entity: Entity,
-    sprite: Texture2D,
 
     pub variant: EnemyVariant,
 
@@ -100,7 +103,6 @@ impl Enemy
         Self { 
             enemy_id: index,
             entity: Entity::new("Enemy", "Enemy", world), 
-            sprite: Texture2D::empty(), 
             variant: EnemyVariant::get_variant(EnemyType::Default, world),
         }
     }
@@ -160,6 +162,8 @@ impl GameObject for Enemy
         let position = self.entity.transform.position - (dir * self.entity.entity_params.speed * get_frame_time());
         self.entity.transform.set_position(position);
         
+        let rotation = f32::atan2(dir.x, dir.y) * -1.0;
+        self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 270.0);
 
         match &mut self.variant.weapon
         {
@@ -187,7 +191,22 @@ impl GameObject for Enemy
         {
             return;
         }
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
+
+
+        if self.variant.sprite == Texture2D::empty()
+        {
+            draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
+        }else
+        {
+            let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), rotation: self.entity.transform.rotation,..Default::default() };
+            draw_texture_ex(self.variant.sprite, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
+        }
+        
+        if SHOW_COLLISION 
+        {
+            draw_rectangle_lines(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, 2.0,COLLISION_COLOR);
+        }
+
         draw_text(
             format!("E: {} | HP : {}",self.enemy_id , self.entity.entity_params.health).as_str(), 
             self.entity.transform.position.x, 

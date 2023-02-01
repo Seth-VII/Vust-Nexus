@@ -2,6 +2,8 @@ use super::*;
 
 pub struct World
 {
+    pub assets: AssetLibrary,
+
     pub entities: Vec<Entity>,
     active_entities: Vec<Entity>,
 
@@ -9,14 +11,28 @@ pub struct World
 }
 impl World
 {
-    pub fn new() -> Self
+    pub async fn new() -> Self
     {
-        Self {entities: Vec::new(),active_entities: Vec::new(), collected_scorepoints: 0}
+        let mut assets = AssetLibrary::new();
+        assets.asset_loader_init().await;
+
+        Self {
+            assets: assets,
+            entities: Vec::new(),
+            active_entities: Vec::new(), 
+            collected_scorepoints: 0
+        }
+    }
+    pub fn reload(&mut self)
+    {
+        self.entities = Vec::new();
+        self.active_entities = Vec::new();
+        self.collected_scorepoints = 0;
     }
 
     pub fn get_collected_scorepoints(&self) -> i32 { return self.collected_scorepoints; }
     pub fn add_scorepoints(&mut self, value: i32) { self.collected_scorepoints += value;}
-
+    pub fn reset_scorepoints(&mut self) { self.collected_scorepoints = 0;}
     pub fn update_actives(&mut self)
     {
         self.active_entities = self.entities.clone();

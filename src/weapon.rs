@@ -3,7 +3,7 @@ use super::*;
 #[derive(Clone)]
 pub struct Weapon
 {
-    entity: Entity,
+    pub entity: Entity,
     parent: Option<Entity>,
     sprite: Texture2D,
     direction: Vec2,

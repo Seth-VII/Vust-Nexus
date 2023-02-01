@@ -13,6 +13,8 @@ impl MisslePool
     }
     pub fn create_pool(&mut self, count: usize, world: &mut World)
     {
+        self.pool.clear();
+        self.active_pool.clear();
         for i in 0..count
         {
             let mut missle = Missle::new(i, world);
@@ -170,11 +172,18 @@ impl GameObject for Missle
     }
 
     fn draw(&mut self, viewspace: &Viewspace) {
+        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, BLACK);
         if !self.entity.is_active
         {
             return;
         }
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, BLACK);
+        if inside_visible_area(self.entity.transform.rect, viewspace.get_position(), viewspace.get_radius())
+        {
+        }
+        if SHOW_COLLISION 
+        {
+            draw_rectangle_lines(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, 2.0,COLLISION_COLOR);
+        }
     }
 }
 impl Collision for Missle

@@ -1,12 +1,17 @@
 use macroquad::prelude::*;
 
 pub const GAME_SIZE_X: i32 = 1280;
-pub const GAME_SIZE_Y: i32 = 720;
-
+pub const GAME_SIZE_Y: i32 = 1280;
+pub const LATE_UPDATE_TICK: f32 = 0.05;
+pub const SHOW_COLLISION: bool = false;
+pub const COLLISION_COLOR: Color = WHITE;
 // Engine
 //------------------
 mod world;
 pub use world::*;
+
+mod assetloader;
+pub use assetloader::*;
 
 mod gameobject;
 pub use gameobject::*;
@@ -22,6 +27,12 @@ pub use entity::*;
 
 // Game
 //------------------
+mod game;
+pub use game::*;
+
+mod gamestate;
+pub use gamestate::*;
+
 mod player;
 pub use player::*;
 
@@ -56,121 +67,18 @@ fn window_conf() -> Conf
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let late_update_tick = 0.05;
-    let mut current_tick = 0.0;
-
-    let mut game = Game::init();
+    let mut game = Game::init().await;
 
     loop {
         clear_background(BLACK);
+        game.Run();
         
-        game.update();
-        
-        if current_tick <= 0.0
-        {
-            game.late_update();
-            current_tick = late_update_tick;
-        }else 
-        {
-            current_tick -= get_frame_time();
-        }
-
-        game.draw();
-        game.update_score();
         //println!("Active Entities: {}", world.get_actives().len());
-        draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, BLACK);
+        draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, WHITE);
+        draw_rectangle_lines(0.0, 0.0, GAME_SIZE_X as f32, GAME_SIZE_Y as f32, 2.0, WHITE);
         //let world_entity = world.get_entity_by_tag("Player").unwrap();
         //println!("World Entity {}", world_entity.tranform.position);
         //println!("World {}", world.entities.len());
         next_frame().await;
-    }
-}
-
-pub struct Game
-{
-    local_score: i32,
-    last_score: i32,
-
-    
-    viewspace: Viewspace,
-    world: World,
-    misslepool: MisslePool,
-    enemy_spawner: EnemySpawner,
-    player: Player,
-    player_weapon: Weapon,
-}
-impl Game {
-    
-    pub fn init() -> Self
-    {
-        let viewspace = Viewspace::new();
-        let mut world = World::new();
-        let mut misslepool = MisslePool::new();
-        let mut enemy_spawner = EnemySpawner::new();
-        let mut player = Player::new(&mut world);
-        let mut player_weapon = Weapon::new("Player Weapn", "Player Weapon",&mut world);
-        
-        
-        misslepool.create_pool(512, &mut world);
-        enemy_spawner.create_pool(32, &mut world);
-        enemy_spawner.init(&mut world);
-        player.init(&mut world);
-        player_weapon.init(&mut world);
-        player_weapon.set_stats(2.0, 20.0, 300.0);
-
-        Self {
-            local_score: 0,  
-            last_score: 0,
-
-            viewspace: viewspace,
-            world: world,
-            misslepool: misslepool,
-            enemy_spawner: enemy_spawner,
-            player: player,
-            player_weapon: player_weapon,
-        }
-
-    }
-    pub fn update(&mut self)
-    {
-        self.world.update_actives();
-        self.viewspace.set_position(self.player.entity.transform.position);
-
-        self.misslepool.update(&mut self.world);
-        self.enemy_spawner.update(&mut self.world);
-        self.enemy_spawner.enemy_shoot(&mut self.misslepool, &mut self.world);
-        self.player.update(&mut self.world);
-        
-
-        if is_key_down(KeyCode::Space)
-        {
-            self.player_weapon.shoot(&mut self.misslepool,&mut self.world);
-        }
-        self.player_weapon.set_parent(Some(self.player.entity.clone()));
-        self.player_weapon.update(&mut self.world);
-
-    }
-    pub fn late_update(&mut self)
-    {
-        self.misslepool.late_update(&mut self.world);
-        self.enemy_spawner.late_update(&mut self.world);
-        self.player.late_update(&mut self.world);
-        self.player_weapon.late_update(&mut self.world);
-    }
-    pub fn draw(&mut self)
-    {
-        self.viewspace.draw();
-        self.misslepool.draw(&self.viewspace);
-        self.enemy_spawner.draw(&self.viewspace);
-
-        self.player.draw(&self.viewspace);
-        self.player_weapon.draw(&self.viewspace);
-
-        draw_text(format!("Local Score: {}", self.local_score).as_str(), GAME_SIZE_X as f32 * 0.5, 60.0, 60.0, BLACK);
-    }
-
-    pub fn update_score(&mut self)
-    {
-        self.local_score = self.world.get_collected_scorepoints();
     }
 }

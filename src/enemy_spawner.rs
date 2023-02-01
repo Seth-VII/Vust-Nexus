@@ -24,6 +24,8 @@ impl EnemySpawner
 
     pub fn create_pool(&mut self, count: usize, world: &mut World)
     {
+        self.pool.clear();
+        self.active_pool.clear();
         for i in 0..count
         {
             let mut enemy = Enemy::new(i,world);
@@ -64,18 +66,38 @@ impl EnemySpawner
     {
         let enemy = &mut self.pool[slot]; 
         enemy.entity.SetActive(true);
-        
-        let random_position = vec2(gen_range(0.0, GAME_SIZE_X as f32), gen_range(0.0, GAME_SIZE_Y as f32));
-        enemy.entity.transform.set_position(random_position);
         EnemySpawner::set_enemytype(enemy, world);
+        
+        let random_position = gen_range(0, 4);
+        let mut outer_position = vec2( 0.0 , 0.0);
+
+        // Select Border
+        match random_position
+        {
+            //LEFT
+            0 => { outer_position = vec2( 0.0 - enemy.entity.transform.get_fullsize().x, gen_range( 0.0 , GAME_SIZE_Y as f32)); }
+            //TOP
+            1 => { outer_position = vec2( gen_range( 0.0 , GAME_SIZE_X as f32), 0.0 - enemy.entity.transform.get_fullsize().y ); }
+            //RIGHT
+            2 => { outer_position = vec2( GAME_SIZE_X as f32 + enemy.entity.transform.get_fullsize().x, gen_range( 0.0 , GAME_SIZE_Y as f32)); }
+            //BOTTOM
+            3 => { outer_position = vec2( gen_range( 0.0 , GAME_SIZE_X as f32), GAME_SIZE_Y as f32 + enemy.entity.transform.get_fullsize().y ); }
+            _ => { outer_position = vec2( 0.0 - enemy.entity.transform.get_fullsize().x, gen_range( 0.0 , GAME_SIZE_Y as f32));}
+        }
+
+
+        enemy.entity.transform.set_position(outer_position);
         self.active_pool.push(enemy.clone());
     }
 
     pub fn enemy_shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
     {
-        for enemy in self.active_pool.iter_mut()
+        for enemy in self.pool.iter_mut()
         {
-            self.pool[enemy.enemy_id].shoot(misslepool,world);
+            if enemy.entity.is_active
+            {
+                enemy.shoot(misslepool,world);
+            }
         }
     }
     fn set_enemytype(enemy: &mut Enemy,world: &mut World)

@@ -16,7 +16,7 @@ impl Viewspace
 
     pub fn draw(&self) 
     {
-        draw_circle(self.position.x, self.position.y, self.radius, color_u8!(50,50,50,50));
+        draw_circle(self.position.x, self.position.y, self.radius + 60.0, color_u8!(50,50,50,50));
     }
 }
 

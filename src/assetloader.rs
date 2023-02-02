@@ -1,7 +1,7 @@
-use std::borrow::Borrow;
-use std::borrow::BorrowMut;
+
 use std::fs::DirEntry;
 use std::fs;
+use super::*;
 
 use macroquad::prelude::*;
 use macroquad::audio::*;
@@ -257,29 +257,16 @@ pub struct TextureAsset
     pub texture_data: Texture2D,
     pub grid: (usize, usize),
     
-    position: usize,
-    current_frame: Rect,
-    is_playing: bool,
-    duration: f32,
-    frame_t: f32,
-
-    x : usize,
-    y : usize,
+    pub animation: Animation,
 }
 impl TextureAsset 
 {
     pub fn new() -> Self {
+        let sheet_size = (1,1);
         Self { 
             texture_data: Texture2D::empty(),
-            grid: (1,1),
-            position: 0,
-            current_frame: Rect::new(0.0,0.0,0.0,0.0),
-            is_playing: false,
-            duration: 1.0,
-            frame_t: 1.0,
-
-            x: 0,
-            y: 0,
+            grid: sheet_size,
+            animation: Animation::new(sheet_size),
         }
     }
     async fn load(&mut self, path: &str, filename: &str)
@@ -289,79 +276,31 @@ impl TextureAsset
         self.texture_data.set_filter(FilterMode::Nearest);
     }
 
-    // Sprite Sheet Animation
-
-    pub fn setup_spritesheet_anim(&mut self, x: usize, y: usize) 
+    pub fn setup_sheet(&mut self ,x: usize, y: usize)
     {
         self.grid = (x,y);
-        self.position = 0;
-        //self.current_frame = Rect::new(pos.x, pos.y, self.get_tile_size().x, self.get_tile_size().y);
+        self.animation.setup_sheet_size(x, y);
     }
-    pub fn get_tile_size(&self) -> Vec2
+    
+    pub fn get_current_frame(&self) -> Option<Rect>
     {
-        let size_x =  self.texture_data.width() / self.grid.0 as f32;
-        let size_y =  self.texture_data.height() / self.grid.1 as f32;
+        let position = self.animation.get_current_frame();
+        let rect = Rect::new(
+            position.x * self.get_sheet_tile_size().x,
+            position.y * self.get_sheet_tile_size().y,
+            self.get_sheet_tile_size().x,
+            self.get_sheet_tile_size().y
+        );
+        Some(rect)
+    }
+
+    pub fn get_sheet_tile_size(&self) -> Vec2
+    {
+        let size_x = self.texture_data.width() / self.grid.0 as f32;
+        let size_y = self.texture_data.height() / self.grid.1 as f32;
         vec2(size_x, size_y)
     }
-    pub fn get_current_frame(&self) -> Option<Rect> {Some(self.current_frame)}
-    pub fn set_animation_duration(&mut self, duration: f32) {self.duration = duration;}
-
-    pub fn play_anim_once(&mut self)
-    {
-        if !self.is_playing
-        {
-            self.position = 0;
-            self.is_playing = true;
-            self.x = 0;
-            self.y = 0;
-        }
-    }
-    pub fn update_animation(&mut self)
-    {
-        if self.is_playing
-        {
-            if self.frame_t <= 0.0
-            {
-                
-               
-                if self.position > (self.grid.0 * self.grid.1)
-                {
-                    self.position = 0;
-                    self.is_playing = false;
-                    self.x = 0;
-                    self.y = 0;
-                    return;
-                }
-
-                let mut pos = vec2(0.0, 0.0);
-                if self.x >= self.grid.0 -1 
-                {
-                    self.x = 0;
-                    self.y += 1;
-                    if self.y >= self.grid.1 
-                    {
-                        self.x = 0;
-                        self.y = 0;
-                        
-                    }
-                }else
-                {
-                    self.x += 1;
-                }
-                pos = vec2(self.x as f32 * self.get_tile_size().x as f32, self.y as f32 * self.get_tile_size().y );
-
-                
-                println!("frame position: {} | {:?}", self.position, (self.current_frame.x, self.current_frame.y ));
-                
-                self.current_frame = Rect::new(pos.x, pos.y, self.get_tile_size().x, self.get_tile_size().y);
-                self.frame_t = self.duration;
-                self.position += 1;
-
-            }else {
-                self.frame_t -= get_frame_time();
-            }
-        }
-    }
+    
 }
 
 

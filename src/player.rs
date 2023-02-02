@@ -18,7 +18,7 @@ impl Player
     {
         let mut player_weapon = Weapon::new("Player Weapn", "Player Weapon", world);
         player_weapon.init(world);
-        player_weapon.set_stats(2.0, 20.0, 300.0);
+        
 
         Self { 
             entity: Entity::new("Player", "Player", world), 
@@ -34,6 +34,7 @@ impl Player
     {
         if is_key_down(KeyCode::Space)
         {
+            self.weapon.set_stats(2.0, 50.0, 300.0);
             if self.weapon.shoot( misslepool, world)
             {
                 let mut params = PlaySoundParams::default();
@@ -53,7 +54,7 @@ impl GameObject for Player
         }else 
         {
             self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
-            self.entity.transform.set_scale( 1.5);
+            self.entity.transform.set_scale( 3.5);
         }
         self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X as f32 * 0.5,self.entity.transform.position.y + GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.entity_params.speed = 200.0;

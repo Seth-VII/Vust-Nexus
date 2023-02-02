@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 pub const GAME_SIZE_X: i32 = 1024;
 pub const GAME_SIZE_Y: i32 = 1024;
 pub const LATE_UPDATE_TICK: f32 = 0.05;
-pub const SHOW_COLLISION: bool = false;
+pub const SHOW_COLLISION: bool = true;
 pub const COLLISION_COLOR: Color = WHITE;
 // Engine
 //------------------
@@ -28,6 +28,8 @@ pub use collision::*;
 mod entity;
 pub use entity::*;
 
+mod animationcontroller;
+pub use animationcontroller::*;
 // Game
 //------------------
 mod game;
@@ -72,21 +74,28 @@ fn window_conf() -> Conf
 async fn main() {
     let mut game = Game::init().await;
 
-    //let mut sprite = game.world.assets.get_asset_by_name("weapon_sheet".to_string()).unwrap().get_texture_asset();
-    //sprite.setup_spritesheet_anim(4, 2);
-    //sprite.set_animation_duration(1.1);
+    /*
+    let mut sprite = game.world.assets.get_asset_by_name("weapon_sheet".to_string()).unwrap().get_texture_asset();
+    sprite.setup_sheet(4, 4);
+    sprite.animation.set_animation_duration(1.0);
+    sprite.animation.set_animation_speed(1.5);
+    */
+    
+
     loop {
         clear_background(BLACK);
         game.Run();
 
         // Test Animation Sheet
+        
         /*
-        sprite.play_anim_once();
-        sprite.update_animation();
-        let size = sprite.get_tile_size() * 3.0;
-        let params = DrawTextureParams { dest_size: Some(size), source: sprite.get_current_frame(), ..Default::default() };
-        draw_texture_ex(sprite.texture_data, GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5, WHITE, params);
+        sprite.animation.play_anim_once();
+        sprite.animation.update();
+        let params = DrawTextureParams { dest_size: Some(sprite.get_sheet_tile_size() * 3.0), source: sprite.get_current_frame(), ..Default::default() };
+        draw_texture_ex(sprite.texture_data, GAME_SIZE_X as f32 * 0.5 - 200.0, GAME_SIZE_Y as f32 * 0.5, WHITE, params);
         */
+        
+        
 
         //println!("Active Entities: {}", world.get_actives().len());
         draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, WHITE);

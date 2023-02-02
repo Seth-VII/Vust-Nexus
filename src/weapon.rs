@@ -30,11 +30,13 @@ impl Weapon
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World) -> bool
     {
         //println!("FSpeed: {}", self.entity.entity_params.firespeed);
-        if self.cooldown_t <= 0.0
+        if self.cooldown_t <= 0.0 && !self.sprite.animation.is_playing
         {
             misslepool.fire_missle( self.entity.clone(), self.direction, world);
             self.cooldown_t = 2.0;
-            self.sprite.play_anim_once();
+            self.sprite.animation.play_anim_once();
+            println!("Firerate: {}",self.entity.entity_params.firerate );
+            self.sprite.animation.set_animation_speed(self.entity.entity_params.firerate * 0.25);
             return true;
         }else  {
             self.cooldown_t -= self.entity.entity_params.firerate * get_frame_time();
@@ -51,16 +53,14 @@ impl Weapon
 impl GameObject for Weapon
 {
     fn init(&mut self, world: &mut World) {
-        self.sprite.setup_spritesheet_anim(4, 2);
+        self.sprite.setup_sheet(4, 4);
         if self.sprite.texture_data == Texture2D::empty()
         {
             self.entity.transform.set_size(vec2(20.0,20.0));
         }else
         {
-            self.sprite.setup_spritesheet_anim(4, 2);
-            self.sprite.set_animation_duration(0.01);
-            self.entity.transform.set_size(self.sprite.get_tile_size());
-            self.entity.transform.set_scale(0.5);
+            self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
+            self.entity.transform.set_scale(0.75);
         }
         self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.entity_params.firespeed = 100.0;
@@ -114,7 +114,7 @@ impl GameObject for Weapon
             draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
         }else
         {
-            self.sprite.update_animation();
+            self.sprite.animation.update();
             let frame = self.sprite.get_current_frame(); 
             let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), source: frame, rotation: self.entity.transform.rotation,..Default::default() };
             draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);

@@ -1,3 +1,5 @@
+use macroquad::audio::{play_sound, PlaySoundParams};
+
 use super::*;
 
 pub struct Player
@@ -5,6 +7,10 @@ pub struct Player
     pub entity: Entity,
     sprite: Texture2D,
     weapon: Weapon,
+
+    sfx_move: SoundData,
+    sfx_shoot: SoundData,
+    sfx_on_hit: SoundData,
 }
 impl Player
 {
@@ -18,24 +24,40 @@ impl Player
             entity: Entity::new("Player", "Player", world), 
             sprite: Texture2D::empty(), 
             weapon: player_weapon,
+            sfx_move:  world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
+            sfx_shoot: world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
+            sfx_on_hit: world.assets.get_asset_by_name("hurt_sound_1".to_string()).unwrap().get_sound_data(),
+
         }
     }  
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
     {
         if is_key_down(KeyCode::Space)
         {
-            self.weapon.shoot( misslepool, world);
+            if self.weapon.shoot( misslepool, world)
+            {
+                let mut params = PlaySoundParams::default();
+                params.volume = 0.15;
+                play_sound( self.sfx_shoot.sound.unwrap(), params)
+            }
         }
     }
 }
 impl GameObject for Player
 {
     fn init(&mut self, world: &mut World) {
-        self.entity.transform.set_size(vec2(60.0,60.0));
+        self.sprite = world.assets.get_asset_by_id(3).get_texture_data();
+        if self.sprite == Texture2D::empty()
+        {
+            self.entity.transform.set_size(vec2(60.0,60.0));
+        }else 
+        {
+            self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
+            self.entity.transform.set_scale( 1.5);
+        }
         self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X as f32 * 0.5,self.entity.transform.position.y + GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.entity_params.speed = 200.0;
         self.entity.set_rect_color(DARKBLUE);
-        self.sprite = world.assets.get_asset_by_id(3).get_texture_data();
     }
     fn update(&mut self, world: &mut World) {
         
@@ -114,6 +136,7 @@ impl GameObject for Player
             draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
         }else
         {
+
             let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), rotation: self.entity.transform.rotation,..Default::default() };
             draw_texture_ex(self.sprite, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
         }
@@ -127,14 +150,18 @@ impl Collision for Player
         {
             return;
         }
+        let mut params = PlaySoundParams::default();
+        params.volume = 0.15;
+
         match entity.tag.as_str()
         {
             "Enemy" => {
                 self.entity.hit(&entity.entity_params);
+                play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
             "Enemy Weapon Missle" => {
-                println!("HIT {}, {}", entity.tag, entity.name);
                 self.entity.hit(&entity.entity_params);
+                play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
             _ => {}
         }

@@ -1,5 +1,5 @@
 use super::*;
-
+use macroquad::audio::{play_sound, PlaySoundParams};
 pub struct MisslePool
 {
     pool: Vec<Missle>,
@@ -101,7 +101,11 @@ pub struct Missle
     misslepool_id: usize, 
     entity: Entity,
     weapon: Option<Entity>,
-    dir: Vec2
+    dir: Vec2,
+    sprite: Texture2D,
+    color: Color,
+
+    sfx_hit: SoundData,
 }
 impl Missle
 {
@@ -112,18 +116,40 @@ impl Missle
             entity: Entity::new("Missle","Missle", world),
             weapon: None,
             dir: vec2(0.0, 0.0),
+            sprite: world.assets.get_asset_by_id(4).get_texture_data(),
+            color: WHITE,
+            sfx_hit: world.assets.get_asset_by_name("hit_1".to_string()).unwrap().get_sound_data(),
         }
     }
 
     pub fn setup_missle(&mut self,from_weapon: Entity, dir: Vec2)
     {
-        self.entity.transform.set_size( vec2(20.0,20.0));
-        self.entity.transform.set_scale( 1.0);
+        if self.sprite == Texture2D::empty()
+        {
+            self.entity.transform.set_size( vec2(30.0,30.0));
+            self.entity.transform.set_scale( 1.0 );
+        }else 
+        {
+            self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
+            self.entity.transform.set_scale( 1.5 );
+        }
         self.entity.transform.set_position(from_weapon.transform.position);
+        self.entity.transform.rotation = from_weapon.transform.rotation;
         self.entity.entity_params = from_weapon.entity_params.clone();
         self.entity.tag = format!("{} Missle", from_weapon.tag);
+
+        if from_weapon.tag.as_str().contains("Player")
+        {
+            self.color = WHITE;
+        }else if from_weapon.tag.as_str().contains("Enemy")
+        {
+            self.color = RED;
+        }
+
         self.weapon = Some(from_weapon);
         self.dir = dir;
+
+        
     }
     pub fn fire(&mut self)
     {
@@ -150,6 +176,7 @@ impl GameObject for Missle
         {
             return;
         }
+        //println!("Speed: {}", self.entity.entity_params.firespeed);
         let position = self.entity.transform.position + (self.dir * self.entity.entity_params.firespeed * get_frame_time());
         self.entity.transform.set_position(position);
         if resolve_windowborder(self.entity.transform.rect)
@@ -172,13 +199,21 @@ impl GameObject for Missle
     }
 
     fn draw(&mut self, viewspace: &Viewspace) {
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, BLACK);
         if !self.entity.is_active
         {
             return;
         }
         if inside_visible_area(self.entity.transform.rect, viewspace.get_position(), viewspace.get_radius())
         {
+            if self.sprite == Texture2D::empty()
+            {
+                draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.color);
+            }else
+            {
+
+                let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), rotation: self.entity.transform.rotation,..Default::default() };
+                draw_texture_ex(self.sprite, self.entity.transform.rect.x, self.entity.transform.rect.y, self.color, params);
+            }
         }
         if SHOW_COLLISION 
         {
@@ -194,18 +229,24 @@ impl Collision for Missle
             //self.rect_color = GREEN;
             return;
         }
+
+        let mut params = PlaySoundParams::default();
+        params.volume = 0.05;
+
         match entity.tag.as_str()
         {
             "Enemy" => {
                 if self.entity.tag.contains("Player")
                 {
                     self.reset_missle();
+                    play_sound( self.sfx_hit.sound.unwrap(), params);
                 }
             },
             "Player" => {
                 if self.entity.tag.contains("Enemy")
                 {
                     self.reset_missle();
+                    play_sound( self.sfx_hit.sound.unwrap(), params);
                 }
             },
             _ => {}

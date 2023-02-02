@@ -1,3 +1,5 @@
+use macroquad::audio::{play_sound, PlaySoundParams};
+
 use super::*;
 pub struct Game
 {
@@ -9,7 +11,7 @@ pub struct Game
 
     gamestate: GameState,
     viewspace: Viewspace,
-    world: World,
+    pub world: World,
 
     misslepool: MisslePool,
     enemy_spawner: EnemySpawner,
@@ -30,6 +32,10 @@ impl Game {
                 let text_width = text.chars().count() as f32 * text_size;
                 let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
                 draw_text(text, centered_position, GAME_SIZE_Y as f32 * 0.5, text_size, WHITE);
+
+
+                
+
             }
             GameState::GamePaused => {
                 if is_key_released(KeyCode::Tab)
@@ -62,6 +68,9 @@ impl Game {
                 if self.player.entity.entity_params.health <= 0.0
                 {
                     self.gamestate = GameState::GameOver;
+                    let mut params = PlaySoundParams::default();
+                    params.volume = 0.5;
+                    play_sound(self.world.assets.get_asset_by_name("explosion_1".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
                 }
 
                 self.draw();
@@ -101,7 +110,7 @@ impl Game {
                 let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
                 draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 100.0, text_size, WHITE);
 
-                if is_key_released(KeyCode::Space)
+                if is_key_pressed(KeyCode::Space)
                 {
                     self.last_score = self.local_score;
                     self.restart();
@@ -172,7 +181,7 @@ impl Game {
         self.player.update(&mut self.world);
         self.player.shoot(&mut self.misslepool, &mut self.world);
 
-        println!("Player Health: {}", self.player.entity.entity_params.health);
+        //println!("Player Health: {}", self.player.entity.entity_params.health);
     }
     pub fn late_update(&mut self)
     {

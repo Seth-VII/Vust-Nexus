@@ -5,7 +5,7 @@ pub struct Weapon
 {
     pub entity: Entity,
     parent: Option<Entity>,
-    sprite: Texture2D,
+    sprite: TextureAsset,
     direction: Vec2,
 
     cooldown_t: f32,
@@ -17,7 +17,7 @@ impl Weapon
         Self {
             entity: Entity::new(name, tag, world),
             parent: None,
-            sprite: Texture2D::empty(),
+            sprite: world.assets.get_asset_by_name("weapon_sheet".to_string()).unwrap().get_texture_asset(),
             direction: vec2(0.0, 0.0),
             cooldown_t: 0.0,
         }
@@ -27,14 +27,18 @@ impl Weapon
         self.parent = parent;
     }
 
-    pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
+    pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World) -> bool
     {
+        //println!("FSpeed: {}", self.entity.entity_params.firespeed);
         if self.cooldown_t <= 0.0
         {
             misslepool.fire_missle( self.entity.clone(), self.direction, world);
-            self.cooldown_t = 2.0
+            self.cooldown_t = 2.0;
+            self.sprite.play_anim_once();
+            return true;
         }else  {
             self.cooldown_t -= self.entity.entity_params.firerate * get_frame_time();
+            return false;
         }
     }
     pub fn set_stats(&mut self, dmg: f32, firerate: f32, firespeed: f32)
@@ -47,8 +51,18 @@ impl Weapon
 impl GameObject for Weapon
 {
     fn init(&mut self, world: &mut World) {
+        self.sprite.setup_spritesheet_anim(4, 2);
+        if self.sprite.texture_data == Texture2D::empty()
+        {
+            self.entity.transform.set_size(vec2(20.0,20.0));
+        }else
+        {
+            self.sprite.setup_spritesheet_anim(4, 2);
+            self.sprite.set_animation_duration(0.01);
+            self.entity.transform.set_size(self.sprite.get_tile_size());
+            self.entity.transform.set_scale(0.5);
+        }
         self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
-        self.entity.transform.set_size(vec2(20.0,20.0));
         self.entity.entity_params.firespeed = 100.0;
     }
     fn update(&mut self, world: &mut World) {
@@ -95,7 +109,15 @@ impl GameObject for Weapon
         
     }
     fn draw(&mut self, viewspace: &Viewspace) {
-        
-        draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
+        if self.sprite.texture_data == Texture2D::empty()
+        {
+            draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
+        }else
+        {
+            self.sprite.update_animation();
+            let frame = self.sprite.get_current_frame(); 
+            let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), source: frame, rotation: self.entity.transform.rotation,..Default::default() };
+            draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
+        }
     }
 }

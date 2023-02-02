@@ -94,7 +94,7 @@ impl EnemySpawner
     {
         for enemy in self.pool.iter_mut()
         {
-            if enemy.entity.is_active
+            if enemy.entity.is_active && enemy.in_viewspace && enemy.variant.has_weapon()
             {
                 enemy.shoot(misslepool,world);
             }
@@ -166,7 +166,10 @@ impl GameObject for EnemySpawner
         {
             if inside_visible_area(self.pool[enemy.enemy_id].entity.transform.rect, viewspace.get_position(), viewspace.get_radius())
             {
+                self.pool[enemy.enemy_id].in_viewspace = true;
                 self.pool[enemy.enemy_id].draw(&viewspace);
+            }else {
+                self.pool[enemy.enemy_id].in_viewspace = false;
             }
         }
     }

@@ -16,7 +16,7 @@ impl Viewspace
 
     pub fn draw(&self) 
     {
-        draw_circle(self.position.x, self.position.y, self.radius + 60.0, color_u8!(50,50,50,50));
+        //draw_circle(self.position.x, self.position.y, self.radius + 60.0, color_u8!(50,50,50,50));
     }
 }
 
@@ -28,6 +28,9 @@ pub fn inside_screen(rect: Rect) -> bool
 // Circle like Area
 pub fn inside_visible_area(rect: Rect, viewspace_position: Vec2, radius: f32) -> bool
 {
+    return true;
+
+    // old Gameloop
     let viewspace = radius;
     let mut test_x = viewspace_position.x;
     let mut test_y = viewspace_position.y;

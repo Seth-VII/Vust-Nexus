@@ -72,6 +72,8 @@ impl GameObject for Weapon
             "Player Weapon" => {
                 let dir = vec2(self.entity.transform.position.x - mouse_position().0, self.entity.transform.position.y - mouse_position().1);
                 self.direction = dir.normalize() * -1.0;
+                self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0);     
+
                 // Update from parent
                 match &mut self.parent
                 {
@@ -86,8 +88,8 @@ impl GameObject for Weapon
                 match player_option
                 {
                     Some(player) => {
-                        let dir = (player.transform.position - self.entity.transform.position);
-                        self.direction = dir.normalize();
+                        self.direction = vec2(-1.0, 0.0);
+                        self.missle_spawn_offset = vec2(-55.0, 0.0);
                     }
                     None => {}
                 }
@@ -102,13 +104,11 @@ impl GameObject for Weapon
             }
             _ => {}
         }
-        let rotation = f32::atan2(self.direction.x, self.direction.y) * -1.0;
-        self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 270.0);
     }
     fn late_update(&mut self, world: &mut World) {
         
     }
-    fn draw(&mut self, viewspace: &Viewspace) {
+    fn draw(&mut self) {
         if self.sprite.texture_data == Texture2D::empty()
         {
             draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
@@ -116,8 +116,10 @@ impl GameObject for Weapon
         {
             self.sprite.animation.update();
             let frame = self.sprite.get_current_frame(); 
-            let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), source: frame, rotation: self.entity.transform.rotation,..Default::default() };
-            draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
+            self.params.source = frame;
+            self.params.dest_size = Some(self.entity.transform.get_fullsize());
+            self.params.rotation = self.entity.transform.rotation;
+            draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), self.params.clone());
         }
     }
 }

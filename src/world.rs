@@ -3,11 +3,14 @@ use super::*;
 pub struct World
 {
     pub assets: AssetLibrary,
+    pub levels: Vec<Level>,
 
     pub entities: Vec<Entity>,
     active_entities: Vec<Entity>,
 
     collected_scorepoints: i32,
+
+    pub particlesystem_pool: ParticleSystemPool,
 }
 impl World
 {
@@ -18,16 +21,39 @@ impl World
 
         Self {
             assets: assets,
+            levels: Vec::new(),
             entities: Vec::new(),
             active_entities: Vec::new(), 
-            collected_scorepoints: 0
+            collected_scorepoints: 0,
+            particlesystem_pool: ParticleSystemPool::new(),
         }
     }
+    pub fn get_active_level(&self) -> &Level { &self.levels[0]}
+    pub fn get_active_level_mut(&mut self) -> &mut Level { &mut self.levels[0]}
+    
+    pub async fn load_levels(&mut self)
+    {
+        let mut loadedlevel = LevelLoader::new();
+        loadedlevel.level_loader_init().await;
+        let mut level = Level::new(self, loadedlevel.levels[SELECTED_LEVEL].clone());
+        level.init(self);
+        self.levels.push(level);
+    }
+
+    pub fn update_level(&mut self, misslepool: &mut MisslePool)
+    {
+        let mut level = self.get_active_level().clone();
+        level.late_update(self, misslepool);
+        self.levels[0] = level.clone();
+    }
+
+
     pub fn reload(&mut self)
     {
         self.entities = Vec::new();
         self.active_entities = Vec::new();
         self.collected_scorepoints = 0;
+        self.particlesystem_pool = ParticleSystemPool::new();
     }
 
     pub fn get_collected_scorepoints(&self) -> i32 { return self.collected_scorepoints; }

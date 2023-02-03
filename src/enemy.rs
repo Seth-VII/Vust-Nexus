@@ -216,6 +216,8 @@ impl GameObject for Enemy
             params.volume = 0.5;
             play_sound(world.assets.get_asset_by_name("explosion_2".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
 
+            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 128, Explosion_settings( ORANGE, WHITE, DARKPURPLE));
+
             self.reset();
             world.add_scorepoints( self.variant.points);
             world.set_entity(&mut self.entity);
@@ -254,7 +256,7 @@ impl GameObject for Enemy
             None => {}
         }
     }
-    fn draw(&mut self, viewspace: &Viewspace) {
+    fn draw(&mut self) {
         if !self.entity.is_active || !self.entity.sprite_is_active
         {
             return;
@@ -285,7 +287,7 @@ impl GameObject for Enemy
         match &mut self.variant.weapon
         {
             Some(weapon) => {
-                weapon.draw(viewspace);
+                weapon.draw();
             }
             None => {}
         }

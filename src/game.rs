@@ -3,7 +3,8 @@ use macroquad::audio::{play_sound, PlaySoundParams};
 use super::*;
 pub struct Game
 {
-    current_tick : f32,
+    late_tick : f32,
+    fixed_tick: f32,
 
     local_score: i32,
     last_score: i32,
@@ -56,13 +57,26 @@ impl Game {
                     self.gamestate = GameState::GamePaused;
                 }
                 self.update();
-                if self.current_tick <= 0.0
+                
+
+                // Fixed Update -> for heavy stuff but needs more updates
+                if self.fixed_tick <= 0.0
                 {
-                    self.late_update();
-                    self.current_tick = LATE_UPDATE_TICK;
+                    self.world.particlesystem_pool.update();
+                    self.fixed_tick = FIXED_UPDATE_TICK;
                 }else 
                 {
-                    self.current_tick -= get_frame_time();
+                    self.fixed_tick -= get_frame_time();
+                }
+
+                // Later Update -> for heavy stuff
+                if self.late_tick <= 0.0
+                {
+                    self.late_update();
+                    self.late_tick = LATE_UPDATE_TICK;
+                }else 
+                {
+                    self.late_tick -= get_frame_time();
                 }
 
                 if self.player.entity.entity_params.health <= 0.0
@@ -72,8 +86,9 @@ impl Game {
                     params.volume = 0.5;
                     play_sound(self.world.assets.get_asset_by_name("explosion_1".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
                 }
-
+                
                 self.draw();
+                self.world.particlesystem_pool.draw();
                 self.update_score();
             }
             GameState::GameOver => {
@@ -140,6 +155,7 @@ impl Game {
     pub async fn init() -> Self
     {
         let mut world = World::new().await;
+        world.load_levels().await;
 
         let viewspace = Viewspace::new();
 
@@ -154,7 +170,8 @@ impl Game {
         player.init(&mut world);
 
         Self {
-            current_tick: 0.0,
+            late_tick: 0.0,
+            fixed_tick: 0.0,
 
             local_score: 0,  
             last_score: 0,
@@ -181,22 +198,25 @@ impl Game {
         self.player.update(&mut self.world);
         self.player.shoot(&mut self.misslepool, &mut self.world);
 
-        //println!("Player Health: {}", self.player.entity.entity_params.health);
     }
     pub fn late_update(&mut self)
     {
-        self.misslepool.late_update(&mut self.world);
+        self.world.update_level(&mut self.misslepool);
+        
         self.enemy_spawner.late_update(&mut self.world);
         self.player.late_update(&mut self.world);
-        
+        self.misslepool.late_update(&mut self.world);
     }
     pub fn draw(&mut self)
     {
-        self.viewspace.draw();
-        self.enemy_spawner.draw(&self.viewspace);
+        self.world.levels[0].draw();
+
         
-        self.player.draw(&self.viewspace);
-        self.misslepool.draw(&self.viewspace);
+        self.viewspace.draw();
+        self.enemy_spawner.draw();
+        
+        self.player.draw();
+        self.misslepool.draw();
 
 
 

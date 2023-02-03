@@ -23,13 +23,13 @@ impl MisslePool
             self.pool.push(missle);
         }
     }
-    pub fn fire_missle(&mut self, from_weapon: Entity, dir: Vec2, world: &mut World)
+    pub fn fire_missle(&mut self, from_weapon: Entity, dir: Vec2, missle_spawn_offset: Vec2, world: &mut World)
     {
         let free_slot = self.get_free_slot();
         match free_slot
         {
             Some(slot) => {
-                self.pool[slot].setup_missle(from_weapon, dir);
+                self.pool[slot].setup_missle(from_weapon, dir, missle_spawn_offset);
                 self.pool[slot].fire();
                 self.active_pool.push(self.pool[slot].clone());
                 world.set_entity(&mut self.pool[slot].entity);
@@ -87,10 +87,10 @@ impl GameObject for MisslePool
             world.set_entity(&mut missle.entity);
         }
     }
-    fn draw(&mut self, viewspace: &Viewspace) {
+    fn draw(&mut self) {
         for missle in self.pool.iter_mut()
         {
-            missle.draw(viewspace);
+            missle.draw();
         }
     }
 }
@@ -106,11 +106,15 @@ pub struct Missle
     color: Color,
 
     sfx_hit: SoundData,
+
 }
 impl Missle
 {
     pub fn new(pool_id: usize,world: &mut World) -> Self
     {
+        let fx_params = ParticleParams::new();
+        let vfx = ParticleSystem::new(32, fx_params);
+
         Self {
             misslepool_id: pool_id,
             entity: Entity::new("Missle","Missle", world),
@@ -122,7 +126,7 @@ impl Missle
         }
     }
 
-    pub fn setup_missle(&mut self,from_weapon: Entity, dir: Vec2)
+    pub fn setup_missle(&mut self,from_weapon: Entity, dir: Vec2, missle_spawn_offset: Vec2)
     {
         if self.sprite == Texture2D::empty()
         {
@@ -130,10 +134,12 @@ impl Missle
             self.entity.transform.set_scale( 1.0 );
         }else 
         {
-            self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
+            // Missle Texture -> Size Squared for balanced shooting in a rotation
+            self.entity.transform.set_size(vec2( self.sprite.height(), self.sprite.height()));
             self.entity.transform.set_scale( 1.5 );
         }
-        self.entity.transform.set_position(from_weapon.transform.position);
+
+        self.entity.transform.set_position(from_weapon.transform.position + missle_spawn_offset);
         self.entity.transform.rotation = from_weapon.transform.rotation;
         self.entity.entity_params = from_weapon.entity_params.clone();
         self.entity.tag = format!("{} Missle", from_weapon.tag);
@@ -184,6 +190,7 @@ impl GameObject for Missle
             self.reset_missle();
         }
 
+        
     }
 
     fn late_update(&mut self, world: &mut World) {
@@ -198,22 +205,19 @@ impl GameObject for Missle
         }
     }
 
-    fn draw(&mut self, viewspace: &Viewspace) {
+    fn draw(&mut self) {
         if !self.entity.is_active
         {
             return;
         }
-        if inside_visible_area(self.entity.transform.rect, viewspace.get_position(), viewspace.get_radius())
+        if self.sprite == Texture2D::empty()
         {
-            if self.sprite == Texture2D::empty()
-            {
-                draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.color);
-            }else
-            {
+            draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.color);
+        }else
+        {
 
-                let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), rotation: self.entity.transform.rotation,..Default::default() };
-                draw_texture_ex(self.sprite, self.entity.transform.rect.x, self.entity.transform.rect.y, self.color, params);
-            }
+            let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), rotation: self.entity.transform.rotation,..Default::default() };
+            draw_texture_ex(self.sprite, self.entity.transform.rect.x, self.entity.transform.rect.y, self.color, params);
         }
         if SHOW_COLLISION 
         {
@@ -231,7 +235,7 @@ impl Collision for Missle
         }
 
         let mut params = PlaySoundParams::default();
-        params.volume = 0.05;
+        params.volume = 0.01;
 
         match entity.tag.as_str()
         {
@@ -244,6 +248,27 @@ impl Collision for Missle
             },
             "Player" => {
                 if self.entity.tag.contains("Enemy")
+                {
+                    self.reset_missle();
+                    play_sound( self.sfx_hit.sound.unwrap(), params);
+                }
+            },
+            "Wall" => {
+                if self.entity.tag.contains("Player") || self.entity.tag.contains("Enemy")
+                {
+                    self.reset_missle();
+                    play_sound( self.sfx_hit.sound.unwrap(), params);
+                }
+            },
+            "Destructible" => {
+                if self.entity.tag.contains("Player") || self.entity.tag.contains("Enemy")
+                {
+                    self.reset_missle();
+                    play_sound( self.sfx_hit.sound.unwrap(), params);
+                }
+            },
+            "Turret" => {
+                if self.entity.tag.contains("Player") || self.entity.tag.contains("Enemy")
                 {
                     self.reset_missle();
                     play_sound( self.sfx_hit.sound.unwrap(), params);

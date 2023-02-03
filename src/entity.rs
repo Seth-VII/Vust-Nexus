@@ -39,6 +39,12 @@ impl Transform
         self.rect.x = centered.x;
         self.rect.y = centered.y;
     }
+    pub fn set_position_not_centered(&mut self, new_position: Vec2)
+    {
+        self.position = new_position;
+        self.rect.x = new_position.x;
+        self.rect.y = new_position.y;
+    }
     pub fn set_size(&mut self, new_size: Vec2)
     {
         self.size = new_size;

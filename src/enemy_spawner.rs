@@ -94,7 +94,7 @@ impl EnemySpawner
     {
         for enemy in self.pool.iter_mut()
         {
-            if enemy.entity.is_active && enemy.in_viewspace && enemy.variant.has_weapon()
+            if enemy.entity.is_active  && enemy.variant.has_weapon()
             {
                 enemy.shoot(misslepool,world);
             }
@@ -126,27 +126,12 @@ impl GameObject for EnemySpawner
     }
     fn update(&mut self, world: &mut World) {
         self.spawn_enemy(world);
-        /*
-        self.active_pool.retain(|e| e.entity.is_active == true);
-        for enemy in self.active_pool.iter_mut()
-        {
-            self.pool[enemy.enemy_id].update(world);
-            //println!("Active: {} ", enemy.enemy_id);
-            if self.pool[enemy.enemy_id].entity.is_active == false
-            {
-                enemy.entity.SetActive(false);
-            }
-        }
-        */
         for enemy in self.pool.iter_mut()
         {
             if enemy.entity.is_active
             {
                 enemy.update(world);
                 world.set_entity(&mut enemy.entity);
-            }else
-            {
-                //println!("Not Active");
             }
         }
     }
@@ -156,21 +141,14 @@ impl GameObject for EnemySpawner
             for entity in world.get_actives().iter_mut()
             {
                 enemy.on_collision(entity);
-                //world.set_entity(&mut entity.clone());
             }
         }
     }
-    fn draw(&mut self, viewspace: &Viewspace) {
+    fn draw(&mut self) {
         draw_text(format!("Next Enemy: {}", self.timer).as_str(), 30.0, 30.0, 16.0, BLACK);
         for enemy in self.active_pool.iter_mut()
         {
-            if inside_visible_area(self.pool[enemy.enemy_id].entity.transform.rect, viewspace.get_position(), viewspace.get_radius())
-            {
-                self.pool[enemy.enemy_id].in_viewspace = true;
-                self.pool[enemy.enemy_id].draw(&viewspace);
-            }else {
-                self.pool[enemy.enemy_id].in_viewspace = false;
-            }
+            self.pool[enemy.enemy_id].draw();
         }
     }
 }

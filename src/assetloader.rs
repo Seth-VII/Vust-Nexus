@@ -255,8 +255,9 @@ impl AssetData
 pub struct TextureAsset
 {
     pub texture_data: Texture2D,
+    pub sheet_split: usize,
+
     pub grid: (usize, usize),
-    
     pub animation: Animation,
 }
 impl TextureAsset 
@@ -265,6 +266,7 @@ impl TextureAsset
         let sheet_size = (1,1);
         Self { 
             texture_data: Texture2D::empty(),
+            sheet_split: 0,
             grid: sheet_size,
             animation: Animation::new(sheet_size),
         }

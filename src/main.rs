@@ -1,10 +1,13 @@
 use macroquad::prelude::*;
 
-pub const GAME_SIZE_X: i32 = 1024;
-pub const GAME_SIZE_Y: i32 = 1024;
+pub const GAME_SIZE_X: i32 = 1600;
+pub const GAME_SIZE_Y: i32 = 900;
 pub const LATE_UPDATE_TICK: f32 = 0.05;
+pub const FIXED_UPDATE_TICK: f32 = 0.01;
 pub const SHOW_COLLISION: bool = true;
 pub const COLLISION_COLOR: Color = WHITE;
+
+pub const SELECTED_LEVEL: usize = 1;
 // Engine
 //------------------
 mod world;
@@ -30,6 +33,16 @@ pub use entity::*;
 
 mod animationcontroller;
 pub use animationcontroller::*;
+
+mod particle_sys;
+pub use particle_sys::*;
+mod particle_settings;
+pub use particle_settings::*;
+
+mod level;
+pub use level::*;
+mod levelloader;
+pub use levelloader::*;
 // Game
 //------------------
 mod game;
@@ -74,6 +87,7 @@ fn window_conf() -> Conf
 async fn main() {
     let mut game = Game::init().await;
 
+    
     /*
     let mut sprite = game.world.assets.get_asset_by_name("weapon_sheet".to_string()).unwrap().get_texture_asset();
     sprite.setup_sheet(4, 4);
@@ -102,7 +116,7 @@ async fn main() {
         draw_rectangle_lines(0.0, 0.0, GAME_SIZE_X as f32, GAME_SIZE_Y as f32, 2.0, WHITE);
         //let world_entity = world.get_entity_by_tag("Player").unwrap();
         //println!("World Entity {}", world_entity.tranform.position);
-        //println!("World {}", world.entities.len());
+        //println!("World {}", game.world.entities.len());
         next_frame().await;
     }
 }

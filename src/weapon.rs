@@ -8,6 +8,9 @@ pub struct Weapon
     sprite: TextureAsset,
     direction: Vec2,
 
+    pub missle_spawn_offset: Vec2,
+    params: DrawTextureParams,
+
     cooldown_t: f32,
 }
 impl Weapon
@@ -19,6 +22,8 @@ impl Weapon
             parent: None,
             sprite: world.assets.get_asset_by_name("weapon_sheet".to_string()).unwrap().get_texture_asset(),
             direction: vec2(0.0, 0.0),
+            missle_spawn_offset: vec2(0.0, 0.0),
+            params: DrawTextureParams::default(),
             cooldown_t: 0.0,
         }
     }
@@ -32,11 +37,14 @@ impl Weapon
         //println!("FSpeed: {}", self.entity.entity_params.firespeed);
         if self.cooldown_t <= 0.0 && !self.sprite.animation.is_playing
         {
-            misslepool.fire_missle( self.entity.clone(), self.direction, world);
+            misslepool.fire_missle( self.entity.clone(), self.direction, self.missle_spawn_offset, world);
             self.cooldown_t = 2.0;
             self.sprite.animation.play_anim_once();
-            println!("Firerate: {}",self.entity.entity_params.firerate );
+            //println!("Firerate: {}",self.entity.entity_params.firerate );
+
             self.sprite.animation.set_animation_speed(self.entity.entity_params.firerate * 0.25);
+            
+            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position + self.missle_spawn_offset, 16, fire_settings(self.direction));
             return true;
         }else  {
             self.cooldown_t -= self.entity.entity_params.firerate * get_frame_time();
@@ -64,14 +72,29 @@ impl GameObject for Weapon
         }
         self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.entity_params.firespeed = 100.0;
+
+        match self.entity.tag.as_str()
+        {
+            "Player Weapon" => {
+                self.params.flip_x = false;
+            }
+            "Enemy Weapon" => {
+                self.params.flip_x = true;
+            }
+            _ => {}
+        }
     }
     fn update(&mut self, world: &mut World) {
         
         match self.entity.tag.as_str()
         {
             "Player Weapon" => {
-                let dir = vec2(self.entity.transform.position.x - mouse_position().0, self.entity.transform.position.y - mouse_position().1);
-                self.direction = dir.normalize() * -1.0;
+                let dir_unnormalized = vec2(self.entity.transform.position.x - mouse_position().0, self.entity.transform.position.y - mouse_position().1);
+                self.direction = dir_unnormalized.normalize() * -1.0;
+
+                self.missle_spawn_offset = 55.0 * self.direction;
+
+                let rotation = f32::atan2(dir_unnormalized.x, dir_unnormalized.y) *-1.0;
                 self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0);     
 
                 // Update from parent

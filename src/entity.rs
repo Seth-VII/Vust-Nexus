@@ -58,6 +58,7 @@ impl Transform
         self.rect.h = self.size.y * new_scale;
     }
     pub fn get_fullsize(&self) -> Vec2 {self.size * self.scale}
+    pub fn get_halfsize(&self) -> Vec2 {return (self.size * self.scale) * 0.5}
     pub fn get_centered_position(&self) -> Vec2
     {
         vec2( self.position.x - ((self.size.x * self.scale) * 0.5), self.position.y - ((self.size.y * self.scale) * 0.5) )

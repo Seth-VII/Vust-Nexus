@@ -39,10 +39,10 @@ impl Weapon
         {
             misslepool.fire_missle( self.entity.clone(), self.direction, self.missle_spawn_offset, world);
             self.cooldown_t = 2.0;
+            self.sprite.animation.set_animation_speed( f32::clamp(self.entity.entity_params.firerate * 0.25, 1.0, 1000.0));
             self.sprite.animation.play_anim_once();
             //println!("Firerate: {}",self.entity.entity_params.firerate );
 
-            self.sprite.animation.set_animation_speed(self.entity.entity_params.firerate * 0.25);
             
             world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position + self.missle_spawn_offset, 16, fire_settings(self.direction));
             return true;
@@ -62,24 +62,35 @@ impl GameObject for Weapon
 {
     fn init(&mut self, world: &mut World) {
         self.sprite.setup_sheet(4, 4);
-        if self.sprite.texture_data == Texture2D::empty()
-        {
-            self.entity.transform.set_size(vec2(20.0,20.0));
-        }else
-        {
-            self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
-            self.entity.transform.set_scale(0.75);
-        }
-        self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
-        self.entity.entity_params.firespeed = 100.0;
+        
 
         match self.entity.tag.as_str()
         {
             "Player Weapon" => {
+                if self.sprite.texture_data == Texture2D::empty()
+                {
+                    self.entity.transform.set_size(vec2(20.0,20.0));
+                }else
+                {
+                    self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
+                    self.entity.transform.set_scale(0.2);
+                }
+                self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
                 self.params.flip_x = false;
+                self.entity.entity_params.firespeed = 100.0;
             }
             "Enemy Weapon" => {
-                self.params.flip_x = true;
+                if self.sprite.texture_data == Texture2D::empty()
+                {
+                    self.entity.transform.set_size(vec2(20.0,20.0));
+                }else
+                {
+                    self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
+                    self.entity.transform.set_scale(0.5);
+                }
+                self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
+                self.params.flip_x = false;
+                self.entity.entity_params.firespeed = 100.0;
             }
             _ => {}
         }
@@ -89,19 +100,25 @@ impl GameObject for Weapon
         match self.entity.tag.as_str()
         {
             "Player Weapon" => {
-                let dir_unnormalized = vec2(self.entity.transform.position.x - mouse_position().0, self.entity.transform.position.y - mouse_position().1);
-                self.direction = dir_unnormalized.normalize() * -1.0;
+                let relative_mouseposition = vec2(mouse_position().0, mouse_position().1);
+                let mouseposition_worldoffset = vec2( relative_mouseposition.x + world.level_offset, relative_mouseposition.y);
+                //println!("{}", mouseposition_worldoffset);
 
-                self.missle_spawn_offset = 55.0 * self.direction;
-
+                let dir_unnormalized = vec2(self.entity.transform.position.x - mouseposition_worldoffset.x, self.entity.transform.position.y - mouseposition_worldoffset.y);
+                //self.direction = dir_unnormalized.normalize() * -1.0;
+                self.direction = vec2(1.0,0.0) ;
+                //self.missle_spawn_offset = vec2(-15.0,0.0) + 50.0 * self.direction;
+                self.missle_spawn_offset = vec2(25.0,0.0) ;
                 let rotation = f32::atan2(dir_unnormalized.x, dir_unnormalized.y) *-1.0;
-                self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0);     
-
+                //self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0); 
+                   
+                self.params.pivot = Some( vec2( self.entity.transform.position.x - (self.entity.transform.get_fullsize().x * 0.5) + 15.0, self.entity.transform.position.y));
+                
                 // Update from parent
                 match &mut self.parent
                 {
                     Some(parent) => {
-                        self.entity.transform.set_position(parent.transform.position);
+                        self.entity.transform.set_position(parent.transform.position + vec2(parent.transform.get_fullsize().x * 0.5, 0.0)  - vec2( 15.0, 2.0));
                     }
                     None => {}
                 }
@@ -111,8 +128,11 @@ impl GameObject for Weapon
                 match player_option
                 {
                     Some(player) => {
-                        self.direction = vec2(-1.0, 0.0);
-                        self.missle_spawn_offset = vec2(-55.0, 0.0);
+                        self.direction = (player.transform.position - self.entity.transform.position).normalize();
+                        self.missle_spawn_offset = 65.0 * self.direction;
+
+                        let rotation = f32::atan2(self.direction.x, self.direction.y) *-1.0;
+                        self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0);     
                     }
                     None => {}
                 }
@@ -138,9 +158,10 @@ impl GameObject for Weapon
         }else
         {
             self.sprite.animation.update();
-            let frame = self.sprite.get_current_frame(); 
+            let frame = self.sprite.get_current_animation_frame(); 
             self.params.source = frame;
             self.params.dest_size = Some(self.entity.transform.get_fullsize());
+            
             self.params.rotation = self.entity.transform.rotation;
             draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), self.params.clone());
         }

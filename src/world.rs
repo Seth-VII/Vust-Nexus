@@ -4,6 +4,8 @@ pub struct World
 {
     pub assets: AssetLibrary,
     pub levels: Vec<Level>,
+    pub level_offset: f32,
+    pub level_completed: bool,
 
     pub entities: Vec<Entity>,
     active_entities: Vec<Entity>,
@@ -22,6 +24,9 @@ impl World
         Self {
             assets: assets,
             levels: Vec::new(),
+            level_offset: 0.0,
+            level_completed: false,
+            
             entities: Vec::new(),
             active_entities: Vec::new(), 
             collected_scorepoints: 0,
@@ -47,6 +52,16 @@ impl World
         self.levels[0] = level.clone();
     }
 
+    pub fn fixed_update(&mut self)
+    {
+        let mut particlesystem_pool = self.particlesystem_pool.clone();
+        particlesystem_pool.update(self);
+        self.particlesystem_pool = particlesystem_pool.clone();
+
+        let mut level = self.get_active_level().clone();
+        level.update(self);
+        self.levels[0] = level.clone();
+    } 
 
     pub fn reload(&mut self)
     {
@@ -63,6 +78,11 @@ impl World
     {
         self.active_entities = self.entities.clone();
         self.active_entities.retain(|e| e.is_active == true);
+
+        if !self.get_active_level().has_reached_level_end(self.level_offset)
+        {
+            self.level_offset += LEVEL_SPEED * get_frame_time();
+        }
     }
     pub fn get_actives(&mut self) -> &mut Vec<Entity>
     {

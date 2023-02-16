@@ -4,10 +4,14 @@ pub const GAME_SIZE_X: i32 = 1600;
 pub const GAME_SIZE_Y: i32 = 900;
 pub const LATE_UPDATE_TICK: f32 = 0.05;
 pub const FIXED_UPDATE_TICK: f32 = 0.01;
-pub const SHOW_COLLISION: bool = true;
+pub const SHOW_COLLISION: bool = false;
 pub const COLLISION_COLOR: Color = WHITE;
 
-pub const SELECTED_LEVEL: usize = 1;
+
+pub const SELECTED_LEVEL: usize = 2;
+
+pub const LEVEL_SPEED: f32 = 150.0;
+
 // Engine
 //------------------
 mod world;
@@ -94,14 +98,12 @@ async fn main() {
     sprite.animation.set_animation_duration(1.0);
     sprite.animation.set_animation_speed(1.5);
     */
-    
 
     loop {
         clear_background(BLACK);
-        game.Run();
-
-        // Test Animation Sheet
         
+        game.Run();
+        // Test Animation Sheet
         /*
         sprite.animation.play_anim_once();
         sprite.animation.update();
@@ -112,8 +114,8 @@ async fn main() {
         
 
         //println!("Active Entities: {}", world.get_actives().len());
-        draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, WHITE);
-        draw_rectangle_lines(0.0, 0.0, GAME_SIZE_X as f32, GAME_SIZE_Y as f32, 2.0, WHITE);
+        draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0 + game.world.level_offset, 60.0, 30.0, WHITE);
+        draw_rectangle_lines(0.0, 0.0, GAME_SIZE_X as f32 + game.world.level_offset, GAME_SIZE_Y as f32, 2.0, WHITE);
         //let world_entity = world.get_entity_by_tag("Player").unwrap();
         //println!("World Entity {}", world_entity.tranform.position);
         //println!("World {}", game.world.entities.len());

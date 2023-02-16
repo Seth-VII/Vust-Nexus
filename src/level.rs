@@ -9,39 +9,81 @@ impl Level
 {
     pub fn new(world: &mut World, loaded: LoadedLevelData) -> Self
     {
-        let mut leveldata = LevelData::new(100.0);
+        let mut leveldata = LevelData::new(50.0);
+        leveldata.load_level_end(loaded.level_end, world);
         leveldata.load_walls(loaded.walls, world);
         leveldata.load_destructibles(loaded.destructibles, world);
         leveldata.load_enemyspawner(loaded.enemy_spawner, world);
         leveldata.load_turrets(loaded.turrets, world);
         Self { leveldata: leveldata }
     }
-
-    pub fn get_visible_walls(&self) -> Vec<WallElement>
+    pub fn has_reached_level_end(&self, progress: f32) -> bool
     {
-        let elements = self.leveldata.walls.clone();
+        self.leveldata.end_of_level.as_ref().unwrap().reached_end(progress)
+    }
+    pub fn get_visible_walls(&self, level_offset: f32) -> Vec<Rect>
+    {
         let mut visibles = Vec::new();
+
+        // Add Default Walls 
+        let elements = self.leveldata.walls.clone();
         for element in elements.iter()
         {
-            if !resolve_windowborder(element.entity.transform.rect)
+            if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
             {
-                visibles.push(element.clone());
+                visibles.push(element.entity.transform.rect.clone());
             }
         }
+        // Add Destructibles
+        let elements = self.leveldata.destructibles.clone();
+        for element in elements.iter()
+        {
+            if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
+            {
+                visibles.push(element.entity.transform.rect.clone());
+            }
+        }
+        // Add Turrets 
+        let elements = self.leveldata.turrets.clone();
+        for element in elements.iter()
+        {
+            if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
+            {
+                visibles.push(element.entity.transform.rect.clone());
+            }
+        }
+
         visibles
     }
     pub fn init(&mut self, world: &mut World)
     {
+        for spawner_element in self.leveldata.enemy_spawner.iter_mut()
+        {
+            spawner_element.create_spawner(world);
+        }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
             turret_element.init(world);
         }
+    }
+    pub fn update(&mut self, world: &mut World)
+    {
+      
+        for spawner_element in self.leveldata.enemy_spawner.iter_mut()
+        {
+            spawner_element.update(world);
+        }
+       
     }
     pub fn late_update(&mut self, world: &mut World, misslepool: &mut MisslePool)
     {
         for destructible_element in self.leveldata.destructibles.iter_mut()
         {
             destructible_element.late_update(world);
+        }
+        for spawner_element in self.leveldata.enemy_spawner.iter_mut()
+        {
+            spawner_element.late_update(world);
         }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
@@ -59,13 +101,18 @@ impl Level
         {
             destructible_element.draw();
         }
-        for enemyspawner_element in self.leveldata.enemy_spawner.iter()
+        for enemyspawner_element in self.leveldata.enemy_spawner.iter_mut()
         {
             enemyspawner_element.draw();
         }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
             turret_element.draw();
+        }
+
+        match &self.leveldata.end_of_level {
+            Some (end_of_level)=> { end_of_level.draw();}
+            None => {}
         }
     }
 }
@@ -78,11 +125,34 @@ pub struct LevelData
     pub enemy_spawner: Vec<EnemySpawnerElement>,
     pub destructibles: Vec<DestructibleElement>,
     pub turrets: Vec<TurretElement>,
+
+    pub end_of_level: Option<LevelEndElement>,
 }
 impl LevelData
 {
     pub fn new(scale: f32) -> Self { 
-        Self {level_scale: scale, walls: Vec::new(), enemy_spawner: Vec::new(), destructibles: Vec::new(), turrets: Vec::new() }
+        Self {level_scale: scale, walls: Vec::new(), enemy_spawner: Vec::new(), destructibles: Vec::new(), turrets: Vec::new(), end_of_level: None }
+    }
+    pub fn load_level_end(&mut self, level_end: Vec<Vec2>, world: &mut World)
+    {
+        let mut end_element = LevelEndElement::new(world);
+        let mut y_size = 0.0;
+        let mut pos_y = 0.0; 
+        let mut pos_x = 0.0;
+        for i in 0..level_end.len()
+        {
+            if level_end[i].y > y_size {
+                pos_x = level_end[i].x;
+                y_size = (level_end.last().unwrap().y - level_end[0].y) + 1.0; 
+                pos_y = level_end[0].y;
+                println!("{}", pos_y);
+            } 
+        }
+        end_element.entity.transform.set_size( vec2(1.0, y_size));
+        end_element.entity.transform.set_scale( self.level_scale );
+        end_element.entity.transform.set_position_not_centered(vec2( pos_x , pos_y) * self.level_scale);
+        world.set_entity(&mut end_element.entity);
+        self.end_of_level = Some(end_element);
     }
     pub fn load_walls(&mut self, walls: Vec<Vec2>, world: &mut World)
     {
@@ -131,6 +201,50 @@ impl LevelData
             turret.entity.transform.set_position_not_centered(turrets[i] * self.level_scale);
             world.set_entity(&mut turret.entity);
             self.turrets.push(turret);
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct LevelEndElement
+{
+    pub entity: Entity,
+    pub sprite: TextureAsset,
+}
+impl LevelEndElement
+{
+    pub fn new(world: &mut World) -> Self { 
+        let mut entity = Entity::new("End", "End", world);
+        entity.set_rect_color(WHITE);
+        Self { entity: entity, sprite: TextureAsset::new() } 
+    }
+    pub fn place_endline(&mut self, position: Vec2)
+    {
+        self.entity.transform.set_position(position);
+    }
+    pub fn reached_end(&self, progress: f32) -> bool { inside_windowborder(self.entity.transform.rect, progress, 0.0)}
+    pub fn draw(&self)
+    {
+        if !self.entity.is_active {}else
+        if SHOW_COLLISION 
+        {
+            draw_rectangle_lines(
+                self.entity.transform.rect.x, 
+                self.entity.transform.rect.y, 
+                self.entity.transform.rect.w, 
+                self.entity.transform.rect.h, 
+                2.0,
+                self.entity.get_rect_color()
+            );
+        }else {
+            draw_rectangle_lines(
+                self.entity.transform.rect.x, 
+                self.entity.transform.rect.y, 
+                self.entity.transform.rect.w, 
+                self.entity.transform.rect.h, 
+                2.0,
+                self.entity.get_rect_color()
+            );
         }
     }
 }
@@ -271,6 +385,10 @@ pub struct EnemySpawnerElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
+
+    pub spawner: Option<EnemySpawner>,
+
+    color: Color,
 }
 impl EnemySpawnerElement
 {
@@ -280,17 +398,73 @@ impl EnemySpawnerElement
         params.health = 10.0;
         params.armor = 5.0;
         entity.entity_params = params;
-        entity.set_rect_color(RED);
-        Self { entity: entity, sprite: TextureAsset::new() } 
+
+        
+
+        Self { 
+            entity: entity, 
+            sprite: TextureAsset::new(), 
+            color: RED,
+            spawner: None,
+        } 
+    }
+    pub fn create_spawner(&mut self, world: &mut World)
+    {
+        self.spawner = Some( EnemySpawner::new(&self.entity.transform));
+        self.spawner.as_mut().unwrap().create_pool(5, world);
+        self.spawner.as_mut().unwrap().init(world);
     }
     pub fn place_spawner(&mut self, position: Vec2)
     {
-        self.entity.transform.set_position(position);
+        self.entity.transform.set_position(position + vec2( 200.0, 0.0));
     }
-    pub fn draw(&self)
+    pub fn update(&mut self, world: &mut World)
     {
-        if !self.entity.is_active {}else
-        if SHOW_COLLISION 
+        if !self.entity.is_active {return;}
+        println!("Spawner");
+        match &mut self.spawner
+        {
+            Some(spawner) => 
+            {
+                spawner.update(world);
+            }
+            None => {}
+        }
+    }
+    pub fn late_update(&mut self, world: &mut World) {
+        // Only activate inside Windowborder
+        //self.entity.transform.set_position(self.entity.transform.position + vec2(5.0, 0.0));
+
+        if !inside_windowborder(self.entity.transform.rect, world.level_offset, 200.0) 
+        {
+            self.entity.is_active = false; 
+            world.set_entity(&mut self.entity);
+        } 
+        else {
+            self.entity.is_active = true; 
+            world.set_entity(&mut self.entity);
+
+            if inside_windowborder(self.entity.transform.rect, world.level_offset, 0.0) 
+            {
+                self.color = GREEN;
+            }else {self.color = RED;}
+        }
+        
+        if !self.entity.is_active {return;}
+        match &mut self.spawner
+        {
+            Some(spawner) => 
+            {
+                spawner.late_update(world);
+                self.color = GREEN;
+            }
+            None => {}
+        }
+    }
+    pub fn draw(&mut self)
+    {
+        
+        if SHOW_COLLISION  
         {
             draw_rectangle_lines(
                 self.entity.transform.rect.x, 
@@ -298,16 +472,27 @@ impl EnemySpawnerElement
                 self.entity.transform.rect.w, 
                 self.entity.transform.rect.h, 
                 2.0,
-                self.entity.get_rect_color()
+                self.color
             );
-        }else {
+        }
+        if !self.entity.is_active {return;}
+        if !SHOW_COLLISION {
             draw_rectangle(
                 self.entity.transform.rect.x, 
                 self.entity.transform.rect.y, 
                 self.entity.transform.rect.w, 
                 self.entity.transform.rect.h, 
-                self.entity.get_rect_color()
+                self.color
             );
+        }
+
+        match &mut self.spawner
+        {
+            Some(spawner) => 
+            {
+                spawner.draw();
+            }
+            None => {}
         }
     }
 }

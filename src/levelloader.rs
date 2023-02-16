@@ -7,11 +7,18 @@ pub struct LoadedLevelData
     pub enemy_spawner: Vec<Vec2>,
     pub destructibles: Vec<Vec2>,
     pub turrets: Vec<Vec2>,
+    pub level_end: Vec<Vec2>
 }
 impl LoadedLevelData
 {
     pub fn new() -> Self { 
-        Self { walls: Vec::new(), enemy_spawner: Vec::new(), destructibles: Vec::new(), turrets: Vec::new() }
+        Self { 
+            walls: Vec::new(), 
+            enemy_spawner: Vec::new(), 
+            destructibles: Vec::new(), 
+            turrets: Vec::new(),
+            level_end: Vec::new(),
+        }
     }
 }
 
@@ -37,7 +44,8 @@ impl LevelLoader
         let files = vec![
 
             "test_level.png",
-            "test_level_2.png"
+            "test_level_2.png",
+            "test_level_3.png",
         ];
 
         for file in files
@@ -79,6 +87,7 @@ impl LevelLoader
         let _destructible = Color::new(0.0,0.0,1.0,1.0);
         let _enemyspawner = Color::new(1.0,0.0,0.0,1.0);
         let _turret = Color::new(1.0,1.0,0.0,1.0);
+        let _level_end = Color::new(0.0, 1.0, 0.0, 1.0);
 
         for y in 0..level_image.height()
         {
@@ -101,6 +110,11 @@ impl LevelLoader
                 if level_image.get_pixel(x as u32, y as u32) == _turret
                 {
                     new_level.turrets.push( position );
+                }
+                if level_image.get_pixel(x as u32, y as u32) == _level_end
+                {
+                    new_level.level_end.push( position );
+
                 }
             }
         } 

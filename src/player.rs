@@ -5,8 +5,10 @@ use super::*;
 pub struct Player
 {
     pub entity: Entity,
-    sprite: Texture2D,
+    sprite: TextureAsset,
     weapon: Weapon,
+
+    reached_end: bool,
 
     sfx_move: SoundData,
     sfx_shoot: SoundData,
@@ -26,14 +28,18 @@ impl Player
         params.armor = 3.0;
         params.speed = 250.0;
         params.damage = 2.0;
-        params.firerate = 100.0;
+        params.firerate = 50.0;
         params.firespeed = 400.0;
-
         entity.entity_params = params;
+
+        let sprite = world.assets.get_asset_by_id(4).get_texture_asset();
+
         Self { 
             entity: entity, 
-            sprite: Texture2D::empty(), 
+            sprite: sprite, 
             weapon: player_weapon,
+
+            reached_end: false,
 
             sfx_move:  world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
             sfx_shoot: world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
@@ -58,23 +64,27 @@ impl Player
 impl GameObject for Player
 {
     fn init(&mut self, world: &mut World) {
-        self.sprite = world.assets.get_asset_by_id(3).get_texture_data();
-        if self.sprite == Texture2D::empty()
+        self.sprite.setup_sheet(5, 3);
+
+
+        if self.sprite.texture_data == Texture2D::empty()
         {
             self.entity.transform.set_size(vec2(60.0,60.0));
         }else 
         {
-            self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
-            self.entity.transform.set_scale( 3.5);
+            self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
+            //self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
+            self.entity.transform.set_scale( 1.0);
         }
         self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X as f32 * 0.5,self.entity.transform.position.y + GAME_SIZE_Y as f32 * 0.5 ));
-        self.entity.set_rect_color(DARKBLUE);
+        self.entity.set_rect_color(WHITE);
     }
     fn update(&mut self, world: &mut World) {
         
 
         self.entity.hit_cooldown();
-
+        world.level_completed = self.reached_end;
+        
         // MOVEMENT
         if is_key_down(KeyCode::W)
         {
@@ -82,7 +92,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position - (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls())
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -93,7 +103,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position + (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls())
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -105,7 +115,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position - vec2(self.entity.entity_params.speed, 0.0) * get_frame_time();
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls())
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -116,10 +126,23 @@ impl GameObject for Player
             let new_position = self.entity.transform.position + vec2(self.entity.entity_params.speed, 0.0) * get_frame_time();
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls())
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
+        }
+
+        let mut updated_transform = self.entity.transform;
+        let new_position = self.entity.transform.position + (vec2(self.entity.entity_params.speed * 3.0, 0.0) * get_frame_time());
+        updated_transform.set_position(new_position);
+        if !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
+        {
+            self.entity.transform.set_position( vec2(self.entity.transform.position.x + LEVEL_SPEED * get_frame_time(), self.entity.transform.position.y));
+        }
+
+        if resolve_windowborder(updated_transform.rect, world.level_offset)
+        {
+            self.entity.entity_params.health = 0.0;
         }
         // WEAPON
         self.weapon.set_parent(Some(self.entity.clone()));
@@ -139,14 +162,22 @@ impl GameObject for Player
         {
             draw_rectangle_lines(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, 2.0,COLLISION_COLOR);
         }
-        if self.sprite == Texture2D::empty()
+        if self.sprite.texture_data == Texture2D::empty()
         {
             draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
         }else
         {
+            self.sprite.animation.update();
+            let frame = self.sprite.get_current_animation_frame(); 
 
-            let params = DrawTextureParams { dest_size: Some(self.entity.transform.get_fullsize()), rotation: self.entity.transform.rotation,..Default::default() };
-            draw_texture_ex(self.sprite, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
+            let params = DrawTextureParams { 
+                dest_size: Some(self.entity.transform.get_fullsize()), 
+                rotation: self.entity.transform.rotation,
+                source: frame,
+                ..Default::default() 
+            };
+
+            draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
         }
         self.weapon.draw();
     }
@@ -171,6 +202,9 @@ impl Collision for Player
             "Enemy Weapon Missle" => {
                 self.entity.hit(&entity.entity_params);
                 play_sound(self.sfx_on_hit.sound.unwrap(), params);
+            }
+            "End" => {
+                self.reached_end = true;
             }
             _ => {}
         }

@@ -21,9 +21,9 @@ impl Viewspace
 }
 
 
-pub fn inside_screen(rect: Rect) -> bool
+pub fn inside_screen(rect: Rect, level_progress: f32) -> bool
 {
-    rect.x < 0.0 || rect.x + rect.w > GAME_SIZE_X as f32 || rect.y < 0.0 || rect.y + rect.h > GAME_SIZE_Y as f32
+    rect.x < 0.0 + level_progress || rect.x + rect.w > GAME_SIZE_X as f32 + level_progress || rect.y < 0.0 || rect.y + rect.h > GAME_SIZE_Y as f32
 }
 // Circle like Area
 pub fn inside_visible_area(rect: Rect, viewspace_position: Vec2, radius: f32) -> bool

@@ -3,7 +3,7 @@ use super::*;
 use interpolation::*;
 use macroquad::rand::*;
 
-
+#[derive(Clone)]
 pub struct ParticleSystemPool
 {
     pool: Vec<ParticleSystem>,
@@ -22,11 +22,21 @@ impl ParticleSystemPool
         self.pool.push(particle_system);
     }
 
-    pub fn update(&mut self)
+    pub fn spawn_constant_system_at_position(&mut self, position: Vec2, particle_count: usize, params: ParticleParams)
+    {
+        let mut particle_system = ParticleSystem::new(particle_count, params);
+        particle_system.transform.position = position;
+        particle_system.spawn_constant();
+        self.pool.push(particle_system);
+    }
+
+
+
+    pub fn update(&mut self,world: &mut World)
     {
         for ps in self.pool.iter_mut()
         {
-            ps.update_particles();
+            ps.update_particles(world);
         }
     }
     pub fn draw(&mut self)
@@ -89,13 +99,13 @@ impl ParticleSystem {
             self.pool.spawn_particle(self.params,self.transform);
         }
     }
-    pub fn update_particles(&mut self)
+    pub fn update_particles(&mut self, world: &mut World)
     {
         if !self.is_active {return;}
 
         if self.pool.active_pool.len() > 0
         {
-            self.pool.update();
+            self.pool.update(world);
         }else {
             self.is_active = false;
         }
@@ -282,12 +292,12 @@ impl ParticlePool
         }
     }
     
-    pub fn update(&mut self)
+    pub fn update(&mut self, world: &mut World)
     {
         self.active_pool.retain(|p| p.is_active == true);
         for i in self.active_pool.iter_mut()
         {
-            i.update();
+            i.update(world);
         }
     }
     pub fn draw(&mut self)
@@ -310,6 +320,7 @@ pub struct Particle
 
     alpha: f32,
     pub is_active: bool,
+    in_view: bool,
 }
 impl Particle {
     pub fn new(id: usize,params: ParticleParams) -> Self
@@ -322,6 +333,7 @@ impl Particle {
             color: params.color_begin,
             alpha: 0.0,
             is_active: false,
+            in_view: false,
         }
     }
     pub fn set_start(&mut self, params: ParticleParams,transform: Transform)
@@ -347,12 +359,18 @@ impl Particle {
         }
         return true;
     }
-    pub fn update(&mut self)
+    pub fn update(&mut self, world: &mut World)
     {
 
         if self.is_active == false
         {
             return;
+        }
+        if !inside_windowborder(self.transform.rect, world.level_offset, self.transform.get_fullsize().y)
+        {
+            self.in_view = false;
+        }else {
+            self.in_view = true;
         }
         if self.lifetime > 0.01
         {
@@ -360,18 +378,20 @@ impl Particle {
             self.lifetime -= 1.0 * self.params.speed_begin * get_frame_time();
             self.alpha = 1.0 - (( self.lifetime / self.params.lifetime)  );
 
-            self.transform.position = Vec2::lerp(
+            self.transform.set_position( Vec2::lerp(
                 self.params.position_begin, 
                 self.params.position_end, 
-                self.alpha);
+                self.alpha)
+            );
             self.transform.rotation = f32::lerp(
                 &self.params.rotation_begin, 
                 &self.params.rotation_end, 
                 &self.alpha);
-            self.transform.size = Vec2::lerp(
+            self.transform.set_size( Vec2::lerp(
                 self.params.size_begin * self.params.render_scale, 
                 self.params.size_end * self.params.render_scale, 
-                self.alpha);
+                self.alpha)
+            );
             /*
             self.speed = f32::lerp(
                 &self.params.speed_begin, 
@@ -404,7 +424,7 @@ impl Particle {
 
     pub fn draw(&mut self)
     {
-        if self.is_active && self.check_screen_visibility()
+        if self.is_active && self.in_view
         {
             draw_rectangle( 
                 self.transform.position.x - (self.transform.size.x / 2.0), 

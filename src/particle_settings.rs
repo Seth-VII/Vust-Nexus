@@ -4,23 +4,31 @@ use super::*;
 pub fn fire_settings( dir: Vec2 ) -> ParticleParams
 {
     // | Right X | Left -X |  Bottom Y | Top -Y |
-    let mut range = vec4(0.0 , 0.0, 0.0, 0.0);
-    if dir.x == 1.0
+    let dir_multiplier = vec2(50.0, 50.0) + (vec2(50.0, 50.0) * dir);
+    //let mut range = vec4(0.0 , 0.0, 0.0, 0.0);
+    let mut range = vec4(0.0,0.0,0.0,0.0);
+    
+    if dir.x > 0.0
     {
-        range = vec4(100.0 , 80.0, 50.0, -50.0);
+        //range = vec4(100.0, 80.0, 50.0, -50.0);
+        range = vec4( dir_multiplier.x * 2.0, dir_multiplier.x , dir_multiplier.y, dir_multiplier.y * -1.0);
     }
-    if dir.x == -1.0
+    if dir.x < 0.0
     {
-        range = vec4(-80.0 , -100.0, 50.0, -50.0);
+        //range = vec4(-80.0, -100.0, 50.0, -50.0);
+        range = vec4( dir_multiplier.x * -2.0, dir_multiplier.x , dir_multiplier.y, dir_multiplier.y * -1.0);
     }
-    if dir.y == 1.0
+    if dir.y > 0.0
     {
-        range = vec4(50.0 , -50.0, 100.0, 80.0);
+        //range = vec4(50.0, -50.0, 100.0, 80.0);
+        range = vec4( dir_multiplier.x, dir_multiplier.x * -1.0, dir_multiplier.y * 2.0, dir_multiplier.y);
     }
-    if dir.y == -1.0
+    if dir.y < 0.0
     {
-        range = vec4(50.0 , -50.0, -80.0, -100.0);
+        //range = vec4(50.0, -50.0, -80.0, -100.0);
+        range = vec4( dir_multiplier.x, dir_multiplier.x * -1.0, dir_multiplier.y * -2.0, dir_multiplier.y);
     }
+    
 
     let mut params : ParticleParams = ParticleParams { 
         spawn_rate: 2.0,
@@ -31,7 +39,7 @@ pub fn fire_settings( dir: Vec2 ) -> ParticleParams
         color_begin: WHITE, 
         color_end: color_u8!(0,0,0,0), 
 
-        size_begin: vec2(10.0, 10.0), 
+        size_begin: vec2(5.0, 5.0), 
         size_end: vec2(0.0, 0.0), 
         render_scale: 1.0,
 

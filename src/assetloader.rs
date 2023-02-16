@@ -77,6 +77,7 @@ impl AssetLibrary
             "enemy_2.png",
             "enemy_3.png",
             "player.png",
+            "Ship_sheet.png",
             "player_missle_1.png",
             "tile_texture_atlas.png",
             "weapon_sheet.png",
@@ -259,6 +260,7 @@ pub struct TextureAsset
 
     pub grid: (usize, usize),
     pub animation: Animation,
+    pub animation_controller: AnimationController,
 }
 impl TextureAsset 
 {
@@ -269,6 +271,7 @@ impl TextureAsset
             sheet_split: 0,
             grid: sheet_size,
             animation: Animation::new(sheet_size),
+            animation_controller: AnimationController::new(sheet_size),
         }
     }
     async fn load(&mut self, path: &str, filename: &str)
@@ -282,11 +285,23 @@ impl TextureAsset
     {
         self.grid = (x,y);
         self.animation.setup_sheet_size(x, y);
+        self.animation_controller.setup_sheet_size(x,y);
     }
     
-    pub fn get_current_frame(&self) -> Option<Rect>
+    pub fn get_current_animation_frame(&self) -> Option<Rect>
     {
         let position = self.animation.get_current_frame();
+        let rect = Rect::new(
+            position.x * self.get_sheet_tile_size().x,
+            position.y * self.get_sheet_tile_size().y,
+            self.get_sheet_tile_size().x,
+            self.get_sheet_tile_size().y
+        );
+        Some(rect)
+    }
+    pub fn get_current_anim_controller_frame(&self) -> Option<Rect>
+    {
+        let position = self.animation_controller.get_current_frame();
         let rect = Rect::new(
             position.x * self.get_sheet_tile_size().x,
             position.y * self.get_sheet_tile_size().y,

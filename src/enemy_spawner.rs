@@ -2,8 +2,10 @@ use macroquad::rand::{gen_range, RandomRange};
 
 use super::*;
 
+#[derive(Clone)]
 pub struct EnemySpawner
 {
+    pub transform: Transform,
     pub pool: Vec<Enemy>,
     active_pool: Vec<Enemy>,
 
@@ -12,12 +14,13 @@ pub struct EnemySpawner
 }
 impl EnemySpawner
 {
-    pub fn new() -> Self
+    pub fn new(transform: &Transform) -> Self
     {
         Self {
+            transform: *transform,
             pool: Vec::new(),
             active_pool: Vec::new(),
-            spawn_time: 1.0,
+            spawn_time: 3.0,
             timer: 0.0,
         }
     }
@@ -67,26 +70,8 @@ impl EnemySpawner
         let enemy = &mut self.pool[slot]; 
         enemy.entity.SetActive(true);
         EnemySpawner::set_enemytype(enemy, world);
-        
-        let random_position = gen_range(0, 4);
-        let mut outer_position = vec2( 0.0 , 0.0);
 
-        // Select Border
-        match random_position
-        {
-            //LEFT
-            0 => { outer_position = vec2( 0.0 - enemy.entity.transform.get_fullsize().x, gen_range( 0.0 , GAME_SIZE_Y as f32)); }
-            //TOP
-            1 => { outer_position = vec2( gen_range( 0.0 , GAME_SIZE_X as f32), 0.0 - enemy.entity.transform.get_fullsize().y ); }
-            //RIGHT
-            2 => { outer_position = vec2( GAME_SIZE_X as f32 + enemy.entity.transform.get_fullsize().x, gen_range( 0.0 , GAME_SIZE_Y as f32)); }
-            //BOTTOM
-            3 => { outer_position = vec2( gen_range( 0.0 , GAME_SIZE_X as f32), GAME_SIZE_Y as f32 + enemy.entity.transform.get_fullsize().y ); }
-            _ => { outer_position = vec2( 0.0 - enemy.entity.transform.get_fullsize().x, gen_range( 0.0 , GAME_SIZE_Y as f32));}
-        }
-
-
-        enemy.entity.transform.set_position(outer_position);
+        enemy.entity.transform.set_position(self.transform.position);
         self.active_pool.push(enemy.clone());
     }
 

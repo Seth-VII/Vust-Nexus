@@ -120,7 +120,7 @@ impl Missle
             entity: Entity::new("Missle","Missle", world),
             weapon: None,
             dir: vec2(0.0, 0.0),
-            sprite: world.assets.get_asset_by_id(4).get_texture_data(),
+            sprite: world.assets.get_asset_by_name("player_missle_1".to_string()).unwrap().get_texture_data(),
             color: WHITE,
             sfx_hit: world.assets.get_asset_by_name("hit_1".to_string()).unwrap().get_sound_data(),
         }
@@ -185,7 +185,7 @@ impl GameObject for Missle
         //println!("Speed: {}", self.entity.entity_params.firespeed);
         let position = self.entity.transform.position + (self.dir * self.entity.entity_params.firespeed * get_frame_time());
         self.entity.transform.set_position(position);
-        if resolve_windowborder(self.entity.transform.rect)
+        if resolve_windowborder(self.entity.transform.rect, world.level_offset)
         {
             self.reset_missle();
         }
@@ -261,14 +261,14 @@ impl Collision for Missle
                 }
             },
             "Destructible" => {
-                if self.entity.tag.contains("Player") || self.entity.tag.contains("Enemy")
+                if self.entity.tag.contains("Player")
                 {
                     self.reset_missle();
                     play_sound( self.sfx_hit.sound.unwrap(), params);
                 }
             },
             "Turret" => {
-                if self.entity.tag.contains("Player") || self.entity.tag.contains("Enemy")
+                if self.entity.tag.contains("Player")
                 {
                     self.reset_missle();
                     play_sound( self.sfx_hit.sound.unwrap(), params);

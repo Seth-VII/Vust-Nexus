@@ -421,7 +421,7 @@ impl EnemySpawnerElement
     pub fn update(&mut self, world: &mut World)
     {
         if !self.entity.is_active {return;}
-        println!("Spawner");
+        //println!("Spawner");
         match &mut self.spawner
         {
             Some(spawner) => 

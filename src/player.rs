@@ -65,7 +65,8 @@ impl GameObject for Player
 {
     fn init(&mut self, world: &mut World) {
         self.sprite.setup_sheet(5, 3);
-
+        self.sprite.animation_controller.apply_state_setup( StateMachineSetup::player_setup() );
+        self.sprite.animation_controller.play_anim_once();
 
         if self.sprite.texture_data == Texture2D::empty()
         {
@@ -144,6 +145,9 @@ impl GameObject for Player
         {
             self.entity.entity_params.health = 0.0;
         }
+
+        
+
         // WEAPON
         self.weapon.set_parent(Some(self.entity.clone()));
         self.weapon.update(world);
@@ -156,6 +160,17 @@ impl GameObject for Player
             self.on_collision( entity);
         }
         self.weapon.late_update(world);
+
+        if is_key_down(KeyCode::W) {
+            self.sprite.animation_controller.get_statemachine_mut().SetState(2);
+        } else if is_key_down(KeyCode::S) {
+            self.sprite.animation_controller.get_statemachine_mut().SetState(1);
+        } else {
+            self.sprite.animation_controller.get_statemachine_mut().SetState(0);
+        }
+        
+        self.sprite.animation_controller.update();
+
     }
     fn draw(&mut self) {
         if SHOW_COLLISION 
@@ -167,8 +182,8 @@ impl GameObject for Player
             draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, self.entity.get_rect_color());
         }else
         {
-            self.sprite.animation.update();
-            let frame = self.sprite.get_current_animation_frame(); 
+            
+            let frame = self.sprite.get_current_anim_controller_frame(); 
 
             let params = DrawTextureParams { 
                 dest_size: Some(self.entity.transform.get_fullsize()), 

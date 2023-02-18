@@ -43,9 +43,10 @@ impl LevelLoader
 
         let files = vec![
 
-            "test_level.png",
-            "test_level_2.png",
+            //"test_level.png",
+            //"test_level_2.png",
             "test_level_3.png",
+            "Level_2.png",
         ];
 
         for file in files

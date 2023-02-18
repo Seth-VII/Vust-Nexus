@@ -29,7 +29,7 @@ impl ParticleSystemPool
         particle_system.spawn_constant();
         self.pool.push(particle_system);
     }
-
+    pub fn clear(&mut self) { self.pool.clear();}
 
 
     pub fn update(&mut self,world: &mut World)

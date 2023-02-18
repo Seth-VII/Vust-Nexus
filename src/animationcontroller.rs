@@ -158,7 +158,7 @@ impl Animation
             //println!("frame: {:?}", self.current_frame);
             
         }else if self.loop_anim  && self.frame_t <= 0.0 {
-            println!("time {}", self.frame_t);
+            //println!("time {}", self.frame_t);
             self.play_anim_loop(start_frame);
         }else {
             self.stop_slice(end_frame);
@@ -239,7 +239,7 @@ impl AnimationState
         
         self.animation.as_mut().unwrap().update_slice(self.frame_start,self.frame_end);
         self.animation.as_mut().unwrap().loop_anim = self.loop_anim;
-        println!("Animation frame {}", self.animation.as_mut().unwrap().get_current_frame());
+        //println!("Animation frame {}", self.animation.as_mut().unwrap().get_current_frame());
 
     }
     pub fn get_current_animation_frame(&self) -> Vec2 {

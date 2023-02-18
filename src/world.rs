@@ -3,9 +3,13 @@ use super::*;
 pub struct World
 {
     pub assets: AssetLibrary,
-    pub levels: Vec<Level>,
+
+    pub level_loader: LevelLoader,
+    pub available_levels: usize,
+    pub level: Option<Level>,
     pub level_offset: f32,
     pub level_completed: bool,
+    selected_level: usize,
 
     pub entities: Vec<Entity>,
     active_entities: Vec<Entity>,
@@ -21,11 +25,18 @@ impl World
         let mut assets = AssetLibrary::new();
         assets.asset_loader_init().await;
 
+        let mut loader = LevelLoader::new();
+        loader.level_loader_init().await;
+
         Self {
             assets: assets,
-            levels: Vec::new(),
+
+            available_levels: loader.levels.len(),
+            level_loader: loader,
+            level: None,
             level_offset: 0.0,
             level_completed: false,
+            selected_level: 0,
             
             entities: Vec::new(),
             active_entities: Vec::new(), 
@@ -33,23 +44,48 @@ impl World
             particlesystem_pool: ParticleSystemPool::new(),
         }
     }
-    pub fn get_active_level(&self) -> &Level { &self.levels[0]}
-    pub fn get_active_level_mut(&mut self) -> &mut Level { &mut self.levels[0]}
-    
-    pub async fn load_levels(&mut self)
+    pub fn get_active_level(&self) -> &Level { 
+        &self.level.as_ref().unwrap()
+    }
+    pub fn get_active_level_id(&self) -> usize {
+        self.selected_level
+    }
+
+    pub fn next_level(&mut self) {
+        self.reload();
+        println!("selected {} / available {}", self.selected_level, self.available_levels);
+        if self.selected_level < self.available_levels -1
+        {
+            self.selected_level += 1;
+            self.load_level();
+        }
+    }
+
+    pub fn load_level(&mut self)
     {
-        let mut loadedlevel = LevelLoader::new();
-        loadedlevel.level_loader_init().await;
-        let mut level = Level::new(self, loadedlevel.levels[SELECTED_LEVEL].clone());
+        let mut level = Level::new(self, self.level_loader.levels[self.selected_level].clone());
         level.init(self);
-        self.levels.push(level);
+        self.level = Some(level);
+    }
+
+    pub fn reload(&mut self)
+    {
+        self.entities.clear();
+        self.active_entities.clear();
+        self.collected_scorepoints = 0;
+        self.particlesystem_pool.clear();
+        self.level = None;
+        println!("Reload! {}", self.entities.len());
     }
 
     pub fn update_level(&mut self, misslepool: &mut MisslePool)
     {
-        let mut level = self.get_active_level().clone();
-        level.late_update(self, misslepool);
-        self.levels[0] = level.clone();
+        //self.level.as_mut().unwrap().late_update(self, misslepool);
+        if self.level.is_some() {
+            let mut lvl = self.level.as_mut().unwrap().clone();
+            lvl.late_update(self,misslepool);
+            self.level = Some(lvl.clone());
+        }
     }
 
     pub fn fixed_update(&mut self)
@@ -58,18 +94,13 @@ impl World
         particlesystem_pool.update(self);
         self.particlesystem_pool = particlesystem_pool.clone();
 
-        let mut level = self.get_active_level().clone();
-        level.update(self);
-        self.levels[0] = level.clone();
-    } 
 
-    pub fn reload(&mut self)
-    {
-        self.entities = Vec::new();
-        self.active_entities = Vec::new();
-        self.collected_scorepoints = 0;
-        self.particlesystem_pool = ParticleSystemPool::new();
-    }
+        if self.level.is_some() {
+            let mut lvl = self.level.as_mut().unwrap().clone();
+            lvl.update(self);
+            self.level = Some(lvl.clone());
+        }
+    } 
 
     pub fn get_collected_scorepoints(&self) -> i32 { return self.collected_scorepoints; }
     pub fn add_scorepoints(&mut self, value: i32) { self.collected_scorepoints += value;}

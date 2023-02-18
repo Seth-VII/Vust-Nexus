@@ -23,6 +23,12 @@ pub struct Game
 impl Game {
     pub fn Run(&mut self)
     {
+        if self.world.level_completed && self.gamestate != GameState::LevelCompleted {
+            self.gamestate = GameState::LevelCompleted;
+            self.world.level_offset = 0.0;
+            println!("Level Completed!");
+        }
+        //println!("{:?}", self.gamestate);
         match self.gamestate
         {
             GameState::MainMenu => {
@@ -55,20 +61,13 @@ impl Game {
             }
             GameState::GameRunning => {
                 
-                if self.world.level_completed {
-                    self.gamestate = GameState::LevelCompleted;
-                    self.world.level_offset = 0.0;
-                }
-                
                 if is_key_released(KeyCode::Tab)
                 {
                     self.gamestate = GameState::GamePaused;
                 }
 
-
                 self.update();
                 
-
                 // Fixed Update -> for heavy stuff but needs more updates
                 if self.fixed_tick <= 0.0
                 {
@@ -146,22 +145,54 @@ impl Game {
                 }
             }
             GameState::LevelCompleted => {
-                 // Win Screen
-                 let text = format!("Level Completed");
-                 let text_size =  60.0;
-                 let text_width = text.chars().count() as f32 * text_size;
-                 let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                 draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 - 100.0, text_size, WHITE);
+                self.world.level_completed = false;
+                self.world.level_offset = 0.0;
+                let level_position = vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5);
+                self.camera.target = level_position;
+                set_camera(&self.camera);
 
-                  // Local Score
+                // Win Screen
+                let text = format!("Level Completed");
+                let text_size =  60.0;
+                let text_width = text.chars().count() as f32 * text_size;
+                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 - 100.0, text_size, WHITE);
+
+                // Local Score
                 let text = format!("Current Score: {}", self.local_score);
                 let text_size =  40.0;
                 let text_width = text.chars().count() as f32 * text_size;
                 let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 30.0, text_size, WHITE);
+
+                // Current Level
+                let text = format!("Level {} / {}", self.world.get_active_level_id(), 10);
+                let text_size =  40.0;
+                let text_width = text.chars().count() as f32 * text_size;
+                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
                 draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 0.0, text_size, WHITE);
+
+
+                if is_key_pressed(KeyCode::Space)
+                {
+                    self.next_level();
+                    return;
+                }
             }
         }
     }
+    pub fn next_level(&mut self)
+    {
+        self.world.next_level();
+        println!("Count: {}", self.world.entities.len());
+        self.misslepool = MisslePool::new();
+        self.misslepool.create_pool(512, &mut self.world);
+        
+        self.player = Player::new(&mut self.world);
+        self.player.init(&mut self.world);
+        self.gamestate = GameState::GameRunning;
+    }
+
     pub fn restart(&mut self)
     {
         self.world.reload();
@@ -183,8 +214,9 @@ impl Game {
     pub async fn init() -> Self
     {
         let mut world = World::new().await;
-        world.load_levels().await;
+        world.load_level();
 
+        println!("Count: {}", world.entities.len());
         let viewspace = Viewspace::new();
 
         let camera_rect = Rect::new(0.0,0.0, GAME_SIZE_X as f32 , GAME_SIZE_Y as f32 );
@@ -248,7 +280,7 @@ impl Game {
     }
     pub fn draw(&mut self)
     {
-        self.world.levels[0].draw();
+        self.world.level.as_mut().unwrap().draw();
 
         
         self.viewspace.draw();

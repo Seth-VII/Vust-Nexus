@@ -209,6 +209,12 @@ impl GameObject for Enemy
         }
     }
     fn update(&mut self, world: &mut World) {
+        if resolve_extended_deathzone(self.entity.transform.rect, world.level_offset)
+        {
+            self.reset();
+            world.set_entity(&mut self.entity);
+            return;
+        }
 
         if self.entity.entity_params.health <= 0.0
         {

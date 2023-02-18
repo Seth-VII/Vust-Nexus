@@ -110,7 +110,10 @@ impl GameObject for EnemySpawner
         }
     }
     fn update(&mut self, world: &mut World) {
-        self.spawn_enemy(world);
+        if inside_screen(self.transform.rect, world.level_offset)
+        {
+            self.spawn_enemy(world);
+        }
         for enemy in self.pool.iter_mut()
         {
             if enemy.entity.is_active

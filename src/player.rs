@@ -84,7 +84,10 @@ impl GameObject for Player
         
 
         self.entity.hit_cooldown();
-        world.level_completed = self.reached_end;
+        if self.reached_end {
+            world.level_completed = true;
+            return;
+        }
         
         // MOVEMENT
         if is_key_down(KeyCode::W)
@@ -141,7 +144,7 @@ impl GameObject for Player
             self.entity.transform.set_position( vec2(self.entity.transform.position.x + LEVEL_SPEED * get_frame_time(), self.entity.transform.position.y));
         }
 
-        if resolve_windowborder(updated_transform.rect, world.level_offset)
+        if resolve_deathzone(updated_transform.rect, world.level_offset)
         {
             self.entity.entity_params.health = 0.0;
         }

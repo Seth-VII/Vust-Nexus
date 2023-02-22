@@ -4,12 +4,12 @@ pub struct World
 {
     pub assets: AssetLibrary,
 
-    pub level_loader: LevelLoader,
-    pub available_levels: usize,
+    //pub level_loader: LevelLoader,
+    //pub available_levels: usize,
     pub level: Option<Level>,
     pub level_offset: f32,
     pub level_completed: bool,
-    selected_level: usize,
+    //selected_level: usize,
 
     pub entities: Vec<Entity>,
     active_entities: Vec<Entity>,
@@ -31,12 +31,12 @@ impl World
         Self {
             assets: assets,
 
-            available_levels: loader.levels.len(),
-            level_loader: loader,
+            //available_levels: loader.levels.len(),
+            //level_loader: loader,
             level: None,
             level_offset: 0.0,
             level_completed: false,
-            selected_level: 0,
+            //selected_level: 0,
             
             entities: Vec::new(),
             active_entities: Vec::new(), 
@@ -47,26 +47,6 @@ impl World
     pub fn get_active_level(&self) -> &Level { 
         &self.level.as_ref().unwrap()
     }
-    pub fn get_active_level_id(&self) -> usize {
-        self.selected_level
-    }
-
-    pub fn next_level(&mut self) {
-        self.reload();
-        println!("selected {} / available {}", self.selected_level, self.available_levels);
-        if self.selected_level < self.available_levels -1
-        {
-            self.selected_level += 1;
-            self.load_level();
-        }
-    }
-
-    pub fn load_level(&mut self)
-    {
-        let mut level = Level::new(self, self.level_loader.levels[self.selected_level].clone());
-        level.init(self);
-        self.level = Some(level);
-    }
 
     pub fn reload(&mut self)
     {
@@ -76,16 +56,6 @@ impl World
         self.particlesystem_pool.clear();
         self.level = None;
         println!("Reload! {}", self.entities.len());
-    }
-
-    pub fn update_level(&mut self, misslepool: &mut MisslePool)
-    {
-        //self.level.as_mut().unwrap().late_update(self, misslepool);
-        if self.level.is_some() {
-            let mut lvl = self.level.as_mut().unwrap().clone();
-            lvl.late_update(self,misslepool);
-            self.level = Some(lvl.clone());
-        }
     }
 
     pub fn fixed_update(&mut self)

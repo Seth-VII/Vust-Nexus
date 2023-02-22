@@ -184,6 +184,30 @@ impl LevelData
         for i in 0..e_spawner.len()
         {
             let mut spawner = EnemySpawnerElement::new(world);
+
+
+            for s in i..e_spawner.len()
+            {
+                if e_spawner[s] != e_spawner[i]
+                {
+                    if e_spawner[s].x > e_spawner[i].x && e_spawner[s].x < e_spawner[i].x + 2.0
+                    {
+                        
+                    }else if e_spawner[s].y > e_spawner[i].y && e_spawner[s].y < e_spawner[i].y + 2.0
+                    {
+
+                    }else {
+                        
+                    }
+                }
+            }
+
+
+        //end_element.entity.transform.set_size( vec2(1.0, y_size));
+        //end_element.entity.transform.set_scale( self.level_scale );
+        //end_element.entity.transform.set_position_not_centered(vec2( pos_x , pos_y) * self.level_scale);
+
+
             spawner.entity.transform.set_size( vec2(1.0, 1.0));
             spawner.entity.transform.set_scale( self.level_scale );
             spawner.entity.transform.set_position_not_centered(e_spawner[i] * self.level_scale);

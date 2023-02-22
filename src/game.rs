@@ -16,18 +16,31 @@ pub struct Game
     viewspace: Viewspace,
     pub world: World,
 
+    pub level_loader: LevelLoader,
+    pub available_levels: usize,
+    pub level: Option<Level>,
+    selected_level: usize,
+
     misslepool: MisslePool,
     //enemy_spawner: EnemySpawner,
     player: Player,
 }
 impl Game {
+
     pub fn Run(&mut self)
     {
+
         if self.world.level_completed && self.gamestate != GameState::LevelCompleted {
             self.gamestate = GameState::LevelCompleted;
             self.world.level_offset = 0.0;
             println!("Level Completed!");
         }
+
+        if self.level.is_none()
+        {
+            self.load_level();
+        }
+
         //println!("{:?}", self.gamestate);
         match self.gamestate
         {
@@ -166,7 +179,7 @@ impl Game {
                 draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 30.0, text_size, WHITE);
 
                 // Current Level
-                let text = format!("Level {} / {}", self.world.get_active_level_id(), 10);
+                let text = format!("Level {} / {}", self.selected_level, 10);
                 let text_size =  40.0;
                 let text_width = text.chars().count() as f32 * text_size;
                 let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
@@ -180,17 +193,6 @@ impl Game {
                 }
             }
         }
-    }
-    pub fn next_level(&mut self)
-    {
-        self.world.next_level();
-        println!("Count: {}", self.world.entities.len());
-        self.misslepool = MisslePool::new();
-        self.misslepool.create_pool(512, &mut self.world);
-        
-        self.player = Player::new(&mut self.world);
-        self.player.init(&mut self.world);
-        self.gamestate = GameState::GameRunning;
     }
 
     pub fn restart(&mut self)
@@ -214,7 +216,10 @@ impl Game {
     pub async fn init() -> Self
     {
         let mut world = World::new().await;
-        world.load_level();
+        //world.load_level();
+
+        let mut loader = LevelLoader::new();
+        loader.level_loader_init().await;
 
         println!("Count: {}", world.entities.len());
         let viewspace = Viewspace::new();
@@ -233,6 +238,8 @@ impl Game {
         //enemy_spawner.init(&mut world);
         player.init(&mut world);
 
+
+
         Self {
             late_tick: 0.0,
             fixed_tick: 0.0,
@@ -245,6 +252,11 @@ impl Game {
             viewspace: viewspace,
             camera: camera,
             world: world,
+
+            available_levels: loader.levels.len(),
+            level_loader: loader,
+            level: None,
+            selected_level: 0,
 
             misslepool: misslepool,
             //enemy_spawner: enemy_spawner,
@@ -272,7 +284,7 @@ impl Game {
     }
     pub fn late_update(&mut self)
     {
-        self.world.update_level(&mut self.misslepool);
+        self.update_level();
         
         //self.enemy_spawner.late_update(&mut self.world);
         self.player.late_update(&mut self.world);
@@ -302,5 +314,43 @@ impl Game {
     pub fn update_score(&mut self)
     {
         self.local_score = self.world.get_collected_scorepoints();
+    }
+
+    pub fn next_level(&mut self) {
+        self.world.reload();
+        println!("selected {} / available {}", self.selected_level, self.available_levels);
+        if self.selected_level < self.available_levels -1
+        {
+            self.selected_level += 1;
+            self.load_level();
+        }
+
+        println!("Count: {}", self.world.entities.len());
+        self.misslepool = MisslePool::new();
+        self.misslepool.create_pool(512, &mut self.world);
+        
+        self.player = Player::new(&mut self.world);
+        self.player.init(&mut self.world);
+        self.gamestate = GameState::GameRunning;
+    }
+
+    
+    pub fn load_level(&mut self)
+    {
+        let mut level = Level::new(&mut self.world, self.level_loader.levels[SELECTED_LEVEL].clone());
+        level.init(&mut self.world);
+        self.level = Some(level.clone());
+        self.world.level =  Some(level);
+    }
+
+    pub fn update_level(&mut self)
+    {
+        //self.level.as_mut().unwrap().late_update(self, misslepool);
+        if self.level.is_some() {
+            let mut lvl = self.level.as_mut().unwrap().clone();
+            lvl.late_update(&mut self.world, &mut self.misslepool);
+            self.level = Some(lvl.clone());
+            self.world.level =  Some(lvl);
+        }
     }
 }

@@ -137,6 +137,10 @@ pub struct ParticleParams
     pub position_random_range: Vec4, 
     pub position_random:  Vec2,
 
+    pub use_velocity: bool,
+    pub spawn_position: Vec2,
+    pub velocity: Vec2,
+
     pub rotation_begin: f32,
     pub rotation_end: f32,
 
@@ -162,6 +166,10 @@ impl ParticleParams {
             position_end: vec2(0.0, 0.0), 
             position_random_range: vec4(0.0, 0.0, 0.0, 0.0),
             position_random:  vec2(0.0, 0.0),
+
+            use_velocity: false,
+            spawn_position: vec2(0.0, 0.0), 
+            velocity: vec2(0.0, 0.0), 
             
             rotation_begin: 0.0, 
             rotation_end: 1.0,
@@ -170,6 +178,8 @@ impl ParticleParams {
             speed_end: 1.0,
         }
     }
+    /*
+    
     pub fn default() -> Self
     {
         Self { 
@@ -190,6 +200,10 @@ impl ParticleParams {
             position_random_range: vec4(100.0, -100.0, 100.0, -100.0),
             position_random:  vec2(0.0, 0.0),
 
+            use_velocity: false,
+            spawn_position: vec2(0.0, 0.0), 
+            velocity: vec2(0.0, 0.0), 
+
             rotation_begin: 0.0, 
             rotation_end: 1.0,
             
@@ -197,6 +211,7 @@ impl ParticleParams {
             speed_end: 1.0,
         }
     }
+     */
     pub fn set_color(&mut self, begin: Color, end: Color)
     {
         self.color_begin = begin;
@@ -222,6 +237,13 @@ impl ParticleParams {
         self.color_end = color_u8!(r,g,b,0);
         */
     }
+
+    pub fn randomize_velocity(&mut self, range_x: Vec2, range_y: Vec2)
+    {
+        let value = vec2(RandomRange::gen_range(range_x.x, range_x.y), RandomRange::gen_range(range_y.x, range_y.y));
+        self.velocity += vec2(value.x, value.y);
+    }
+
     pub fn randomize_color(&mut self, color_1: Color, color_2: Color )
     {
         let color = Color::new( 
@@ -256,6 +278,39 @@ impl ParticleParams {
     {
         self.speed_begin = speed;
         self.speed_end = speed;
+    }
+}
+impl Default for ParticleParams
+{
+    fn default() -> Self {
+        Self { 
+            spawn_rate: 1.0,
+            spawn_count: 1,
+
+            lifetime: 1.0,
+
+            color_begin: WHITE, 
+            color_end: color_u8!(0,0,0,0), 
+
+            size_begin: vec2(10.0, 10.0), 
+            size_end: vec2(0.0, 0.0), 
+            render_scale: 5.0,
+
+            position_begin: vec2(0.0, 0.0), 
+            position_end: vec2(0.0, 0.0), 
+            position_random_range: vec4(100.0, -100.0, 100.0, -100.0),
+            position_random:  vec2(0.0, 0.0),
+
+            use_velocity: false,
+            spawn_position: vec2(0.0, 0.0), 
+            velocity: vec2(0.0, 0.0), 
+
+            rotation_begin: 0.0, 
+            rotation_end: 1.0,
+            
+            speed_begin: 1.0,
+            speed_end: 1.0,
+        }
     }
 }
 
@@ -347,6 +402,12 @@ impl Particle {
 
         self.params.size_begin      = params.size_begin + transform.size;
         self.params.size_end        = params.size_end + transform.size;
+
+        if params.use_velocity
+        {
+            self.transform.position = params.spawn_position;
+            self.params.velocity = params.velocity;
+        }
     }
     pub fn check_screen_visibility(&mut self) -> bool
     {
@@ -366,11 +427,11 @@ impl Particle {
         {
             return;
         }
-        if !inside_windowborder(self.transform.rect, world.level_offset, self.transform.get_fullsize().y)
+        if inside_windowborder(self.transform.rect, world.level_offset, 200.0) 
         {
-            self.in_view = false;
-        }else {
             self.in_view = true;
+        }else {
+            self.in_view = false;
         }
         if self.lifetime > 0.01
         {
@@ -378,11 +439,19 @@ impl Particle {
             self.lifetime -= 1.0 * self.params.speed_begin * get_frame_time();
             self.alpha = 1.0 - (( self.lifetime / self.params.lifetime)  );
 
-            self.transform.set_position( Vec2::lerp(
-                self.params.position_begin, 
-                self.params.position_end, 
-                self.alpha)
-            );
+            if self.params.use_velocity
+            {
+                self.transform.position += self.params.velocity;
+            }else {
+                
+                self.transform.set_position( Vec2::lerp(
+                    self.params.position_begin, 
+                    self.params.position_end, 
+                    self.alpha)
+                );
+            }
+
+
             self.transform.rotation = f32::lerp(
                 &self.params.rotation_begin, 
                 &self.params.rotation_end, 
@@ -433,7 +502,7 @@ impl Particle {
                 self.transform.size.y, 
                 self.color);
 
-        }else
+        }else if self.is_active
         {
             draw_rectangle_lines( 
                 self.transform.position.x - (self.transform.size.x / 2.0), 

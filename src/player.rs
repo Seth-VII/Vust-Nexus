@@ -34,6 +34,8 @@ impl Player
 
         let sprite = world.assets.get_asset_by_id(4).get_texture_asset();
 
+        
+
         Self { 
             entity: entity, 
             sprite: sprite, 
@@ -149,6 +151,20 @@ impl GameObject for Player
             self.entity.entity_params.health = 0.0;
         }
 
+
+        // Thruster Particle Adjustment
+        let draw_scale = self.entity.transform.get_fullsize() * 3.0;
+        let mut spawn_position = vec2(
+            self.entity.transform.rect.x - (draw_scale.x * 0.333), 
+            self.entity.transform.rect.y + (draw_scale.y * 0.2), 
+        );
+
+        if is_key_down(KeyCode::S) {
+            spawn_position.y = self.entity.transform.rect.y - (draw_scale.y * 0.2);
+        } else if is_key_down(KeyCode::W) {
+            spawn_position.y = self.entity.transform.rect.y + (draw_scale.y * 0.5);
+        }
+        world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 2, thruster_settings(spawn_position,vec2(-5.0, 0.0)));
         
 
         // WEAPON

@@ -44,7 +44,10 @@ impl Weapon
             //println!("Firerate: {}",self.entity.entity_params.firerate );
 
             
-            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position + self.missle_spawn_offset, 16, fire_settings(self.direction));
+            world.particlesystem_pool.spawn_system_at_position(
+                self.entity.transform.position + self.missle_spawn_offset, 
+                16, 
+                fire_settings( self.entity.transform.position + self.missle_spawn_offset,self.direction));
             return true;
         }else  {
             self.cooldown_t -= self.entity.entity_params.firerate * get_frame_time();

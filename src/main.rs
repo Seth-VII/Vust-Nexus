@@ -8,7 +8,7 @@ pub const SHOW_COLLISION: bool = false;
 pub const COLLISION_COLOR: Color = WHITE;
 
 
-pub const SELECTED_LEVEL: usize = 2;
+pub const SELECTED_LEVEL: usize = 0;
 
 pub const LEVEL_SPEED: f32 = 150.0;
 

@@ -83,8 +83,8 @@ impl EnemySpawner
             spawner_type: enemy_type,
             spawn_count: count,
             spawned: 0,
-            spawn_duration: 3.0,
-            time: 3.0,
+            spawn_duration: 2.0,
+            time: 0.2,
         }
     }
     pub fn set_transform(&mut self, transform: &Transform)

@@ -105,12 +105,14 @@ impl GameObject for Weapon
                 //println!("{}", mouseposition_worldoffset);
 
                 let dir_unnormalized = vec2(self.entity.transform.position.x - mouseposition_worldoffset.x, self.entity.transform.position.y - mouseposition_worldoffset.y);
-                //self.direction = dir_unnormalized.normalize() * -1.0;
-                self.direction = vec2(1.0,0.0) ;
-                //self.missle_spawn_offset = vec2(-15.0,0.0) + 50.0 * self.direction;
-                self.missle_spawn_offset = vec2(25.0,0.0) ;
+                self.direction = dir_unnormalized.normalize() * -1.0;
+                //self.direction = vec2(1.0,0.0) ;
+
+                self.missle_spawn_offset = vec2(-15.0,0.0) + 50.0 * self.direction;
+                //self.missle_spawn_offset = vec2(25.0,0.0) ;
+
                 let rotation = f32::atan2(dir_unnormalized.x, dir_unnormalized.y) *-1.0;
-                //self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0); 
+                self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0); 
                    
                 self.params.pivot = Some( vec2( self.entity.transform.position.x - (self.entity.transform.get_fullsize().x * 0.5) + 15.0, self.entity.transform.position.y));
                 

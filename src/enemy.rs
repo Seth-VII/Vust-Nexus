@@ -38,7 +38,7 @@ impl EnemyVariant
         let sprite = world.assets.get_asset_by_id(1).get_texture_data();
         let mut params = EntityParams::default();
         params.health = 10.0;
-        params.speed = 100.0;
+        params.speed = 250.0;
         params.armor = 2.0;
         params.damage = 2.0;
 
@@ -74,7 +74,7 @@ impl EnemyVariant
         let sprite = world.assets.get_asset_by_id(0).get_texture_data();
         let mut params = EntityParams::default();
         params.health = 20.0;
-        params.speed = 80.0;
+        params.speed = 170.0;
         params.armor = 5.0;
         params.damage = 3.0;
 
@@ -109,7 +109,7 @@ impl EnemyVariant
         let sprite = world.assets.get_asset_by_id(2).get_texture_data();
         let mut params = EntityParams::default();
         params.health = 5.0;
-        params.speed = 100.0;
+        params.speed = 200.0;
         params.armor = 1.5;
         params.damage = 1.0;
         params.firerate = 1.0;

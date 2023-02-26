@@ -53,14 +53,14 @@ impl LevelLoader
         let level_files = vec![
             //"test_level.png",
             //"test_level_2.png",
-            "test_level_3.png",
-            "Level_1.png",
+            //"test_level_3.png",
+            //"Level_1.png",
             "Level_2.png",
         ];
 
         let spawnmap_files = vec![
-            "test_level_3_SpawnMap.png",
-            "Level_1_SpawnMap.png",
+            //"test_level_3_SpawnMap.png",
+            //"Level_1_SpawnMap.png",
             "Level_2_SpawnMap.png",
         ];
 

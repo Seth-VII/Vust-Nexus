@@ -33,7 +33,7 @@ impl EnemyPool
         {
             Some(slot) => {
 
-                self.pool[slot].set_enemytype(spawner_type, world);
+                self.pool[slot].set_enemytype(&spawner_type, world);
                 self.pool[slot].init(world);
                 self.pool[slot].entity.SetActive(true);
                 self.pool[slot].entity.transform.set_position( spawner_position);

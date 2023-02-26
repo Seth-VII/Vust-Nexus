@@ -1,3 +1,7 @@
+use std::{mem::MaybeUninit, thread::spawn};
+
+use macroquad::rand::gen_range;
+
 use super::*;
 
 #[derive(Clone)]
@@ -12,6 +16,8 @@ impl Level
         let mut leveldata = LevelData::new(50.0);
         leveldata.load_level_end(loaded.level_end, world);
         leveldata.load_walls(loaded.walls, world);
+        leveldata.load_blocking_walls(loaded.blockingWalls, world);
+        leveldata.load_trap_walls(loaded.trapWalls, world);
         leveldata.load_destructibles(loaded.destructibles, world);
         leveldata.load_enemyspawner(loaded.enemy_spawner, world);
         leveldata.load_turrets(loaded.turrets, world);
@@ -21,12 +27,12 @@ impl Level
     {
         self.leveldata.end_of_level.as_ref().unwrap().reached_end(progress)
     }
-    pub fn get_visible_walls(&self, level_offset: f32) -> Vec<Rect>
+    pub fn get_blocking_walls(&self, level_offset: f32) -> Vec<Rect>
     {
         let mut visibles = Vec::new();
 
-        // Add Default Walls 
-        let elements = self.leveldata.walls.clone();
+        // Add Blocking Walls 
+        let elements = self.leveldata.blockingwalls.clone();
         for element in elements.iter()
         {
             if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
@@ -34,6 +40,17 @@ impl Level
                 visibles.push(element.entity.transform.rect.clone());
             }
         }
+        // Add Trap Walls 
+        /*
+        let elements = self.leveldata.trapwalls.clone();
+        for element in elements.iter()
+        {
+            if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
+            {
+                visibles.push(element.entity.transform.rect.clone());
+            }
+        }
+        */
         // Add Destructibles
         let elements = self.leveldata.destructibles.clone();
         for element in elements.iter()
@@ -55,35 +72,46 @@ impl Level
 
         visibles
     }
+
     pub fn init(&mut self, world: &mut World)
     {
-        for spawner_element in self.leveldata.enemy_spawner.iter_mut()
+        for trap_wall_element in self.leveldata.trapwalls.iter_mut()
         {
-            spawner_element.create_spawner(world);
+            trap_wall_element.init(world);
         }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
             turret_element.init(world);
         }
     }
-    pub fn update(&mut self, world: &mut World)
+    pub fn spawer_update(&mut self, enemypool: &mut EnemyPool, world: &mut World)
     {
-      
-        for spawner_element in self.leveldata.enemy_spawner.iter_mut()
+        for enemyspawner_element in self.leveldata.enemy_spawner.iter_mut()
         {
-            spawner_element.update(world);
+            enemyspawner_element.update(enemypool,world);
         }
-       
     }
-    pub fn late_update(&mut self, world: &mut World, misslepool: &mut MisslePool)
+    pub fn update(&mut self, world: &mut World)
     {
         for destructible_element in self.leveldata.destructibles.iter_mut()
         {
-            destructible_element.late_update(world);
+            destructible_element.update(world);
         }
-        for spawner_element in self.leveldata.enemy_spawner.iter_mut()
+    }
+
+    pub fn late_update(&mut self, world: &mut World, misslepool: &mut MisslePool)
+    {
+        for blocking_wall_element in self.leveldata.blockingwalls.iter_mut()
         {
-            spawner_element.late_update(world);
+            blocking_wall_element.late_update(world);
+        }
+        for trap_wall_element in self.leveldata.trapwalls.iter_mut()
+        {
+            trap_wall_element.late_update(world);
+        }
+        for destructible_element in self.leveldata.destructibles.iter_mut()
+        {
+            destructible_element.late_update(world);
         }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
@@ -96,6 +124,14 @@ impl Level
         for wall_element in self.leveldata.walls.iter()
         {
             wall_element.draw();
+        }
+        for blocking_wall_element in self.leveldata.blockingwalls.iter()
+        {
+            blocking_wall_element.draw();
+        }
+        for trap_wall_element in self.leveldata.trapwalls.iter()
+        {
+            trap_wall_element.draw();
         }
         for destructible_element in self.leveldata.destructibles.iter()
         {
@@ -122,6 +158,8 @@ pub struct LevelData
 {
     pub level_scale: f32,
     pub walls: Vec<WallElement>,
+    pub blockingwalls: Vec<BlockingWallElement>,
+    pub trapwalls: Vec<TrapWallElement>,
     pub enemy_spawner: Vec<EnemySpawnerElement>,
     pub destructibles: Vec<DestructibleElement>,
     pub turrets: Vec<TurretElement>,
@@ -131,7 +169,16 @@ pub struct LevelData
 impl LevelData
 {
     pub fn new(scale: f32) -> Self { 
-        Self {level_scale: scale, walls: Vec::new(), enemy_spawner: Vec::new(), destructibles: Vec::new(), turrets: Vec::new(), end_of_level: None }
+        Self {
+            level_scale: scale, 
+            walls: Vec::new(), 
+            blockingwalls: Vec::new(), 
+            trapwalls: Vec::new(), 
+            enemy_spawner: Vec::new(), 
+            destructibles: Vec::new(), 
+            turrets: Vec::new(), 
+            end_of_level: None 
+        }
     }
     pub fn load_level_end(&mut self, level_end: Vec<Vec2>, world: &mut World)
     {
@@ -160,13 +207,50 @@ impl LevelData
         {
             //println!("LevelData: {}", walls[i]);
             let mut wall = WallElement::new(world);
-            wall.entity.transform.set_size( vec2(1.0, 1.0));
-            wall.entity.transform.set_scale( self.level_scale );
-            wall.entity.transform.set_position_not_centered(walls[i] * self.level_scale);
-            world.set_entity(&mut wall.entity);
+            wall.transform.set_size( vec2(1.0, 1.0));
+            wall.transform.set_scale( self.level_scale );
+            wall.transform.set_position_not_centered(walls[i] * self.level_scale);
+
+            wall.transform.rotation = self.rotate_tile();
+            
             self.walls.push(wall);
         }
     }
+
+    pub fn load_blocking_walls(&mut self, blockingwalls: Vec<Vec2>, world: &mut World)
+    {
+        for i in 0..blockingwalls.len()
+        {
+            //println!("LevelData: {}", walls[i]);
+            let mut wall = BlockingWallElement::new(world);
+            wall.entity.transform.set_size( vec2(1.0, 1.0));
+            wall.entity.transform.set_scale( self.level_scale );
+            wall.entity.transform.set_position_not_centered(blockingwalls[i] * self.level_scale);
+
+            wall.entity.transform.rotation = self.rotate_tile();
+
+            world.set_entity(&mut wall.entity);
+            self.blockingwalls.push(wall);
+        }
+    }
+
+    pub fn load_trap_walls(&mut self, trapwalls: Vec<Vec2>, world: &mut World)
+    {
+        for i in 0..trapwalls.len()
+        {
+            //println!("LevelData: {}", walls[i]);
+            let mut wall = TrapWallElement::new(world);
+            wall.entity.transform.set_size( vec2(1.0, 1.0));
+            wall.entity.transform.set_scale( self.level_scale );
+            wall.entity.transform.set_position_not_centered(trapwalls[i] * self.level_scale);
+
+            wall.entity.transform.rotation = self.rotate_tile();
+
+            world.set_entity(&mut wall.entity);
+            self.trapwalls.push(wall);
+        }
+    }
+
     pub fn load_destructibles(&mut self, destructibles: Vec<Vec2>, world: &mut World)
     {
         for i in 0..destructibles.len()
@@ -175,44 +259,30 @@ impl LevelData
             destructible.entity.transform.set_size( vec2(1.0, 1.0));
             destructible.entity.transform.set_scale( self.level_scale );
             destructible.entity.transform.set_position_not_centered(destructibles[i] * self.level_scale);
+
+            destructible.entity.transform.rotation = self.rotate_tile();
+
             world.set_entity(&mut destructible.entity);
             self.destructibles.push(destructible);
         }
     }
-    pub fn load_enemyspawner(&mut self, e_spawner: Vec<Vec2>, world: &mut World)
+    pub fn load_enemyspawner(&mut self, e_spawner: Vec<(Vec2, usize, usize)>, world: &mut World)
     {
         for i in 0..e_spawner.len()
         {
-            let mut spawner = EnemySpawnerElement::new(world);
+            println!("Loader Spawner Count: {} | type: {}", e_spawner[i].1, e_spawner[i].2);
+            let mut spawner_element = EnemySpawnerElement::new(e_spawner[i].1, e_spawner[i].2 ,world);
 
+            // Apply Spawner Transform
+            spawner_element.entity.transform.set_size( vec2(1.0, 1.0));
+            spawner_element.entity.transform.set_scale( self.level_scale );
+            spawner_element.entity.transform.set_position_not_centered(e_spawner[i].0 * self.level_scale);
 
-            for s in i..e_spawner.len()
-            {
-                if e_spawner[s] != e_spawner[i]
-                {
-                    if e_spawner[s].x > e_spawner[i].x && e_spawner[s].x < e_spawner[i].x + 2.0
-                    {
-                        
-                    }else if e_spawner[s].y > e_spawner[i].y && e_spawner[s].y < e_spawner[i].y + 2.0
-                    {
+            spawner_element.spawner.set_transform(&spawner_element.entity.transform);
 
-                    }else {
-                        
-                    }
-                }
-            }
-
-
-        //end_element.entity.transform.set_size( vec2(1.0, y_size));
-        //end_element.entity.transform.set_scale( self.level_scale );
-        //end_element.entity.transform.set_position_not_centered(vec2( pos_x , pos_y) * self.level_scale);
-
-
-            spawner.entity.transform.set_size( vec2(1.0, 1.0));
-            spawner.entity.transform.set_scale( self.level_scale );
-            spawner.entity.transform.set_position_not_centered(e_spawner[i] * self.level_scale);
-            world.set_entity(&mut spawner.entity);
-            self.enemy_spawner.push(spawner);
+             // Apply Spawner To World
+            world.set_entity(&mut spawner_element.entity);
+            self.enemy_spawner.push(spawner_element);
         }
     }
     pub fn load_turrets(&mut self, turrets: Vec<Vec2>, world: &mut World)
@@ -226,6 +296,33 @@ impl LevelData
             world.set_entity(&mut turret.entity);
             self.turrets.push(turret);
         }
+    }
+
+    pub fn rotate_tile(&mut self) -> f32
+    {
+        let random_rotation = gen_range(0, 12); 
+        let mut rotation = 0;
+        match random_rotation
+        {
+            0 => { rotation = 0; }
+            1 => {  rotation =  90; }
+            2 => {  rotation =  180; }
+            3 => {  rotation =  270; }
+
+            4 => {  rotation =  0; }
+            5 => {  rotation =  90; }
+            6 => {  rotation =  180; }
+            7 => {  rotation =  270; }
+
+            8 => {  rotation =  0; }
+            9 => {  rotation =  90; }
+            10 => {  rotation =  180; }
+            11 => {  rotation =  270; }
+
+            _=> {  rotation =  0;}
+        }
+
+        return  f32::to_radians(rotation as f32);
     }
 }
 
@@ -276,19 +373,82 @@ impl LevelEndElement
 #[derive(Clone)]
 pub struct WallElement
 {
-    pub entity: Entity,
+    pub transform: Transform,
     pub sprite: TextureAsset,
 }
 impl WallElement
 {
     pub fn new(world: &mut World) -> Self { 
-        let mut entity = Entity::new("Wall", "Wall", world);
-        entity.set_rect_color(WHITE);
-        Self { entity: entity, sprite: TextureAsset::new() } 
+        //let mut entity = Entity::new("Wall", "Wall", world);
+        //entity.set_rect_color(WHITE);
+        Self { 
+            //entity: entity,
+            transform: Transform::default(), 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
+        } 
+    }
+    pub fn place_wall(&mut self, position: Vec2)
+    {
+        self.transform.set_position(position);
+    }
+    pub fn draw(&self)
+    {
+        if SHOW_COLLISION 
+        {
+            draw_rectangle_lines(
+                self.transform.rect.x, 
+                self.transform.rect.y, 
+                self.transform.rect.w, 
+                self.transform.rect.h, 
+                2.0,
+                WHITE
+            );
+        }else {
+            /*
+            draw_rectangle(
+                self.transform.rect.x, 
+                self.transform.rect.y, 
+                self.transform.rect.w, 
+                self.transform.rect.h, 
+                WHITE
+            );
+            */
+            let tile_rect = Rect::new(0.0, 0.0, 16.0, 16.0);
+            let mut params = DrawTextureParams::default();
+            params.source = Some(tile_rect);
+            params.dest_size = Some(vec2( self.transform.rect.w + 20.0, self.transform.rect.h + 20.0));
+            params.rotation = self.transform.rotation;
+            draw_texture_ex(self.sprite.texture_data, 
+                self.transform.rect.x - 10.0, 
+                self.transform.rect.y- 10.0, 
+                WHITE, params);
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct BlockingWallElement
+{
+    pub entity: Entity,
+    pub sprite: TextureAsset,
+}
+impl BlockingWallElement
+{
+    pub fn new(world: &mut World) -> Self { 
+        let mut entity = Entity::new("BlockingWall", "BlockingWall", world);
+        entity.set_rect_color(GRAY);
+        Self { 
+            entity: entity, 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
+        } 
     }
     pub fn place_wall(&mut self, position: Vec2)
     {
         self.entity.transform.set_position(position);
+    }
+    pub fn late_update(&mut self, world: &mut World)
+    {
+        self.entity.hit_cooldown();
     }
     pub fn draw(&self)
     {
@@ -304,13 +464,94 @@ impl WallElement
                 self.entity.get_rect_color()
             );
         }else {
+            /*
             draw_rectangle(
+                self.transform.rect.x, 
+                self.transform.rect.y, 
+                self.transform.rect.w, 
+                self.transform.rect.h, 
+                self.entity.get_rect_color()
+            );
+            */
+            let tile_rect = Rect::new(17.0, 0.0,16.0, 16.0);
+            let mut params = DrawTextureParams::default();
+            params.source = Some(tile_rect);
+            params.dest_size = Some(vec2( self.entity.transform.rect.w + 40.0, self.entity.transform.rect.h  + 40.0));
+            params.rotation = self.entity.transform.rotation;
+            draw_texture_ex(self.sprite.texture_data, 
+                self.entity.transform.rect.x - 20.0, 
+                self.entity.transform.rect.y - 20.0, 
+                WHITE, params);
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct TrapWallElement
+{
+    pub entity: Entity,
+    pub sprite: TextureAsset,
+}
+impl TrapWallElement
+{
+    pub fn new(world: &mut World) -> Self { 
+        let entity = Entity::new("Trap", "TrapWall", world);
+
+        Self { 
+            entity: entity, 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset()  
+        } 
+    }
+    pub fn place_wall(&mut self, position: Vec2)
+    {
+        self.entity.transform.set_position(position);
+    }
+    pub fn init(&mut self, world: &mut World)
+    {
+        let mut params = EntityParams::default();
+        params.health = 50.0;
+        params.armor = 3.0;
+        params.damage = 100000.0;
+        self.entity.entity_params = params;
+        self.entity.set_rect_color(MAGENTA);
+        world.set_entity(&mut self.entity);
+    }
+    pub fn late_update(&mut self, world: &mut World)
+    {
+        self.entity.hit_cooldown();
+    }
+    pub fn draw(&self)
+    {
+        if !self.entity.is_active {}else
+        if SHOW_COLLISION 
+        {
+            draw_rectangle_lines(
                 self.entity.transform.rect.x, 
                 self.entity.transform.rect.y, 
                 self.entity.transform.rect.w, 
                 self.entity.transform.rect.h, 
+                2.0,
                 self.entity.get_rect_color()
             );
+        }else {
+           /*
+            draw_rectangle(
+                self.transform.rect.x, 
+                self.transform.rect.y, 
+                self.transform.rect.w, 
+                self.transform.rect.h, 
+                self.entity.get_rect_color()
+            );
+            */
+            let tile_rect = Rect::new(34.0, 0.0, 16.0, 16.0);
+            let mut params = DrawTextureParams::default();
+            params.source = Some(tile_rect);
+            params.dest_size = Some(vec2( self.entity.transform.rect.w + 20.0, self.entity.transform.rect.h + 20.0));
+            params.rotation = self.entity.transform.rotation;
+            draw_texture_ex(self.sprite.texture_data, 
+                self.entity.transform.rect.x - 10.0, 
+                self.entity.transform.rect.y- 10.0, 
+                WHITE, params);
         }
     }
 }
@@ -330,13 +571,22 @@ impl DestructibleElement
         params.armor = 5.0;
 
         entity.entity_params = params;
-        entity.set_rect_color(YELLOW);
+        entity.set_rect_color(WHITE);
         entity.hit_feedback_timer = 0.001;
-        Self { entity: entity, sprite: TextureAsset::new() } 
+
+        Self { 
+            entity: entity, 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
+        } 
     }
     pub fn place_destructible(&mut self, position: Vec2)
     {
         self.entity.transform.set_position(position);
+    }
+    pub fn update(&mut self, world: &mut World)
+    {
+        if !self.entity.is_active {return;}
+        self.entity.hit_cooldown();
     }
     pub fn late_update(&mut self, world: &mut World) {
         
@@ -350,7 +600,7 @@ impl DestructibleElement
             world.set_entity(&mut self.entity);
             return;
         }
-        self.entity.hit_cooldown();
+       
         for entity in world.entities.iter_mut()
         {
             self.on_collision( entity);
@@ -370,13 +620,15 @@ impl DestructibleElement
                 self.entity.get_rect_color()
             );
         }else {
-            draw_rectangle(
-                self.entity.transform.rect.x, 
-                self.entity.transform.rect.y, 
-                self.entity.transform.rect.w, 
-                self.entity.transform.rect.h, 
-                self.entity.get_rect_color()
-            );
+            let tile_rect = Rect::new(51.0, 0.0, 16.0, 16.0);
+            let mut params = DrawTextureParams::default();
+            params.source = Some(tile_rect);
+            params.dest_size = Some(vec2( self.entity.transform.rect.w + 40.0, self.entity.transform.rect.h + 40.0));
+            params.rotation = self.entity.transform.rotation;
+            draw_texture_ex(self.sprite.texture_data, 
+                self.entity.transform.rect.x - 20.0, 
+                self.entity.transform.rect.y- 20.0, 
+                self.entity.get_rect_color(), params);
         }
     }
 }
@@ -409,80 +661,37 @@ pub struct EnemySpawnerElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
-
-    pub spawner: Option<EnemySpawner>,
-
     color: Color,
+    spawner: EnemySpawner,
 }
 impl EnemySpawnerElement
 {
-    pub fn new(world: &mut World) -> Self { 
+    pub fn new(count: usize, spawner_type: usize,world: &mut World) -> Self { 
         let mut entity = Entity::new("EnemySpawner", "EnemySpawner", world);
         let mut params = EntityParams::default();
         params.health = 10.0;
         params.armor = 5.0;
         entity.entity_params = params;
 
-        
+        let spawner = EnemySpawner::create_spawner(count, spawner_type, world);
 
         Self { 
             entity: entity, 
             sprite: TextureAsset::new(), 
             color: RED,
-            spawner: None,
+            spawner: spawner,
         } 
     }
-    pub fn create_spawner(&mut self, world: &mut World)
-    {
-        self.spawner = Some( EnemySpawner::new(&self.entity.transform));
-        self.spawner.as_mut().unwrap().create_pool(5, world);
-        self.spawner.as_mut().unwrap().init(world);
-    }
+
     pub fn place_spawner(&mut self, position: Vec2)
     {
         self.entity.transform.set_position(position + vec2( 200.0, 0.0));
     }
-    pub fn update(&mut self, world: &mut World)
+    
+    pub fn update(&mut self, enemypool: &mut EnemyPool,world: &mut World)
     {
-        if !self.entity.is_active {return;}
-        //println!("Spawner");
-        match &mut self.spawner
-        {
-            Some(spawner) => 
-            {
-                spawner.update(world);
-            }
-            None => {}
-        }
-    }
-    pub fn late_update(&mut self, world: &mut World) {
-        // Only activate inside Windowborder
-        //self.entity.transform.set_position(self.entity.transform.position + vec2(5.0, 0.0));
-
-        if !inside_windowborder(self.entity.transform.rect, world.level_offset, 200.0) 
-        {
-            self.entity.is_active = false; 
-            world.set_entity(&mut self.entity);
-        } 
-        else {
-            self.entity.is_active = true; 
-            world.set_entity(&mut self.entity);
-
-            if inside_windowborder(self.entity.transform.rect, world.level_offset, 0.0) 
-            {
-                self.color = GREEN;
-            }else {self.color = RED;}
-        }
-        
-        if !self.entity.is_active {return;}
-        match &mut self.spawner
-        {
-            Some(spawner) => 
-            {
-                spawner.late_update(world);
-                self.color = GREEN;
-            }
-            None => {}
+        if inside_windowborder(self.entity.transform.rect, world.level_offset, 200.0) {
+            self.spawner.update(enemypool, world);
         }
     }
     pub fn draw(&mut self)
@@ -510,14 +719,6 @@ impl EnemySpawnerElement
             );
         }
 
-        match &mut self.spawner
-        {
-            Some(spawner) => 
-            {
-                spawner.draw();
-            }
-            None => {}
-        }
     }
 }
 

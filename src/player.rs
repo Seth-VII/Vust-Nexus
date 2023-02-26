@@ -64,7 +64,7 @@ impl Player
 impl GameObject for Player
 {
     fn init(&mut self, world: &mut World) {
-        self.sprite.setup_sheet(5, 3);
+        self.sprite.setup_sheet(4, 4);
         self.sprite.animation_controller.apply_state_setup( StateMachineSetup::player_setup() );
         self.sprite.animation_controller.play_anim_once();
 
@@ -75,7 +75,7 @@ impl GameObject for Player
         {
             self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
             //self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
-            self.entity.transform.set_scale( 1.0);
+            self.entity.transform.set_scale( 2.0);
         }
         self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X as f32 * 0.5,self.entity.transform.position.y + GAME_SIZE_Y as f32 * 0.5 ));
         self.entity.set_rect_color(WHITE);
@@ -96,7 +96,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position - (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_blocking_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -107,7 +107,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position + (vec2(0.0, self.entity.entity_params.speed) * get_frame_time());
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_blocking_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -119,7 +119,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position - vec2(self.entity.entity_params.speed, 0.0) * get_frame_time();
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_blocking_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -130,7 +130,7 @@ impl GameObject for Player
             let new_position = self.entity.transform.position + vec2(self.entity.entity_params.speed, 0.0) * get_frame_time();
             updated_transform.set_position(new_position);
 
-            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
+            if !resolve_windowborder(updated_transform.rect, world.level_offset) && !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_blocking_walls(world.level_offset))
             {
                 self.entity.transform.set_position(updated_transform.position);
             }
@@ -139,7 +139,7 @@ impl GameObject for Player
         let mut updated_transform = self.entity.transform;
         let new_position = self.entity.transform.position + (vec2(self.entity.entity_params.speed * 3.0, 0.0) * get_frame_time());
         updated_transform.set_position(new_position);
-        if !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_visible_walls(world.level_offset))
+        if !resolve_levelwalls(updated_transform.rect, world.get_active_level().get_blocking_walls(world.level_offset))
         {
             self.entity.transform.set_position( vec2(self.entity.transform.position.x + LEVEL_SPEED * get_frame_time(), self.entity.transform.position.y));
         }
@@ -187,15 +187,20 @@ impl GameObject for Player
         {
             
             let frame = self.sprite.get_current_anim_controller_frame(); 
-
+            let draw_scale = self.entity.transform.get_fullsize() * 3.0;
             let params = DrawTextureParams { 
-                dest_size: Some(self.entity.transform.get_fullsize()), 
+                dest_size: Some(draw_scale), 
                 rotation: self.entity.transform.rotation,
                 source: frame,
                 ..Default::default() 
             };
 
-            draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), params);
+            draw_texture_ex(
+                self.sprite.texture_data, 
+                self.entity.transform.rect.x - (draw_scale.x * 0.333), 
+                self.entity.transform.rect.y - (draw_scale.y * 0.333), 
+                self.entity.get_rect_color(), 
+                params);
         }
         self.weapon.draw();
     }
@@ -223,6 +228,10 @@ impl Collision for Player
             }
             "End" => {
                 self.reached_end = true;
+            }
+            "TrapWall" => {
+                self.entity.hit(&entity.entity_params);
+                play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
             _ => {}
         }

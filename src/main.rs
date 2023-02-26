@@ -4,7 +4,7 @@ pub const GAME_SIZE_X: i32 = 1600;
 pub const GAME_SIZE_Y: i32 = 900;
 pub const LATE_UPDATE_TICK: f32 = 0.05;
 pub const FIXED_UPDATE_TICK: f32 = 0.01;
-pub const SHOW_COLLISION: bool = true;
+pub const SHOW_COLLISION: bool = false;
 pub const COLLISION_COLOR: Color = WHITE;
 
 
@@ -64,6 +64,9 @@ pub use enemy::*;
 mod enemy_spawner;
 pub use enemy_spawner::*;
 
+mod enemypool;
+pub use enemypool::*;
+
 mod weapon;
 pub use weapon::*;
 
@@ -103,6 +106,7 @@ async fn main() {
         clear_background(BLACK);
         
         game.Run();
+        
         // Test Animation Sheet
         /*
         sprite.animation.play_anim_once();

@@ -64,12 +64,6 @@ impl World
         particlesystem_pool.update(self);
         self.particlesystem_pool = particlesystem_pool.clone();
 
-
-        if self.level.is_some() {
-            let mut lvl = self.level.as_mut().unwrap().clone();
-            lvl.update(self);
-            self.level = Some(lvl.clone());
-        }
     } 
 
     pub fn get_collected_scorepoints(&self) -> i32 { return self.collected_scorepoints; }

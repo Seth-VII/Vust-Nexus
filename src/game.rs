@@ -22,6 +22,8 @@ pub struct Game
     selected_level: usize,
 
     misslepool: MisslePool,
+    enemypool: EnemyPool,
+    spawnerpool: EnemySpawnerPool,
     //enemy_spawner: EnemySpawner,
     player: Player,
 }
@@ -41,6 +43,7 @@ impl Game {
             self.load_level();
         }
 
+        draw_text(format!("HP: {}",self.player.entity.entity_params.health).as_str(), 30.0 + self.world.level_offset, 90.0, 30.0, WHITE);
         //println!("{:?}", self.gamestate);
         match self.gamestate
         {
@@ -84,7 +87,7 @@ impl Game {
                 // Fixed Update -> for heavy stuff but needs more updates
                 if self.fixed_tick <= 0.0
                 {
-                    self.world.fixed_update();
+                    self.fixed_update();
                     self.fixed_tick = FIXED_UPDATE_TICK;
                 }else 
                 {
@@ -122,6 +125,11 @@ impl Game {
                 {
                     self.high_score = self.local_score;
                 }
+                self.world.level_completed = false;
+                self.world.level_offset = 0.0;
+                let level_position = vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5);
+                self.camera.target = level_position;
+                set_camera(&self.camera);
 
                 let text = "GAME OVER";
                 let text_size =  60.0;
@@ -198,10 +206,13 @@ impl Game {
     pub fn restart(&mut self)
     {
         self.world.reload();
+        self.load_level();
 
         self.misslepool = MisslePool::new();
         self.misslepool.create_pool(512, &mut self.world);
         
+        self.enemypool = EnemyPool::new();
+        self.enemypool.create_pool(128, &mut self.world);
         //self.enemy_spawner = EnemySpawner::new();
         //self.enemy_spawner.create_pool(32, &mut self.world);
         //self.enemy_spawner.init(&mut self.world);
@@ -230,10 +241,17 @@ impl Game {
 
 
         let mut misslepool = MisslePool::new();
+        misslepool.create_pool(512, &mut world);
+
+
+        let mut enemypool = EnemyPool::new();
+        enemypool.create_pool(128, &mut world);
+
+        let mut spawnerpool = EnemySpawnerPool::new();
+        //spawnerpool.apply_spawnerpool( &world.level.as_ref().unwrap().get_spawners());
         //let mut enemy_spawner = EnemySpawner::new();
         let mut player = Player::new(&mut world);
         
-        misslepool.create_pool(512, &mut world);
         //enemy_spawner.create_pool(32, &mut world);
         //enemy_spawner.init(&mut world);
         player.init(&mut world);
@@ -259,6 +277,8 @@ impl Game {
             selected_level: 0,
 
             misslepool: misslepool,
+            enemypool: enemypool,
+            spawnerpool: spawnerpool,
             //enemy_spawner: enemy_spawner,
             player: player,
         }
@@ -273,22 +293,30 @@ impl Game {
         self.camera.target = level_position;
 
         set_camera(&self.camera);
-
+        self.level_update();
 
         self.misslepool.update(&mut self.world);
+        
+        self.enemypool.update(&mut self.world);
         //self.enemy_spawner.update(&mut self.world);
         //self.enemy_spawner.enemy_shoot(&mut self.misslepool, &mut self.world);
         self.player.update(&mut self.world);
         self.player.shoot(&mut self.misslepool, &mut self.world);
 
     }
+    pub fn fixed_update(&mut self)
+    {
+        self.level_fixed_update();
+        self.world.fixed_update();
+    }
     pub fn late_update(&mut self)
     {
-        self.update_level();
+        self.level_late_update();
         
         //self.enemy_spawner.late_update(&mut self.world);
         self.player.late_update(&mut self.world);
         self.misslepool.late_update(&mut self.world);
+        self.enemypool.late_update(&mut self.world);
     }
     pub fn draw(&mut self)
     {
@@ -300,7 +328,7 @@ impl Game {
         
         self.player.draw();
         self.misslepool.draw();
-
+        self.enemypool.draw();
         
         let text = format!("Local Score: {}", self.local_score);
         let text_size =  50.0;
@@ -328,7 +356,10 @@ impl Game {
         println!("Count: {}", self.world.entities.len());
         self.misslepool = MisslePool::new();
         self.misslepool.create_pool(512, &mut self.world);
-        
+
+        self.enemypool = EnemyPool::new();
+        self.enemypool.create_pool(128, &mut self.world);
+
         self.player = Player::new(&mut self.world);
         self.player.init(&mut self.world);
         self.gamestate = GameState::GameRunning;
@@ -337,13 +368,37 @@ impl Game {
     
     pub fn load_level(&mut self)
     {
+        println!("Loader Data: {}", self.level_loader.levels[SELECTED_LEVEL].enemy_spawner[0].1 );
         let mut level = Level::new(&mut self.world, self.level_loader.levels[SELECTED_LEVEL].clone());
         level.init(&mut self.world);
         self.level = Some(level.clone());
         self.world.level =  Some(level);
     }
 
-    pub fn update_level(&mut self)
+    pub fn level_update(&mut self)
+    {
+        //self.level.as_mut().unwrap().late_update(self, misslepool);
+        if self.level.is_some() {
+            let mut lvl = self.level.as_mut().unwrap().clone();
+            lvl.update(&mut self.world);
+            lvl.spawer_update( &mut  self.enemypool, &mut  self.world);
+            self.level = Some(lvl.clone());
+            self.world.level =  Some(lvl);
+        }
+    }
+    pub fn level_fixed_update(&mut self)
+    {
+        //self.level.as_mut().unwrap().late_update(self, misslepool);
+        /*
+        if self.level.is_some() {
+            let mut lvl = self.level.as_mut().unwrap().clone();
+            lvl.spawner_update(&mut self.enemypool, &mut self.world);
+            self.level = Some(lvl.clone());
+            self.world.level =  Some(lvl);
+        }
+        */
+    }
+    pub fn level_late_update(&mut self)
     {
         //self.level.as_mut().unwrap().late_update(self, misslepool);
         if self.level.is_some() {

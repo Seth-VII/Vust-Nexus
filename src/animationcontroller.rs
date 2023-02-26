@@ -320,9 +320,9 @@ impl StateMachineSetup {
     {
         let mut states = Vec::new();
 
-        let idle = AnimationState::new(0,4, true, 20.0);
-        let down = AnimationState::new(5,9, false, 20.0);
-        let up = AnimationState::new(10,14, false, 20.0);
+        let idle = AnimationState::new(0,3, true, 25.0);
+        let down = AnimationState::new(4,7, false, 25.0);
+        let up = AnimationState::new(8,11, false, 25.0);
 
         states.push(idle);
         states.push(down);

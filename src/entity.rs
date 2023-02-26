@@ -118,7 +118,7 @@ impl Entity
     pub fn hit(&mut self, entity_params: &EntityParams)
     {
         self.hit_feedback_timer = self.hit_feedback_duration;
-        self.entity_params.health -= 1.0;
+        self.entity_params.health -= entity_params.damage;
     }
     pub fn hit_cooldown(&mut self)
     {

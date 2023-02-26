@@ -132,6 +132,9 @@ impl AssetLibrary
                 asset_type = EAssetType::SoundFile;  
                 display_type = "SoundFile";
             }
+
+           
+
             println!("LOAD NEW ASSET: ");
             new_asset.asset_type = asset_type.clone();
             println!("Asset Name: {}", new_asset.asset_name);
@@ -207,6 +210,16 @@ impl Asset {
             None => {println!("No Texture Data Found!");TextureAsset::new()}
         }
     }
+    pub fn get_texture_from_tileset(&mut self, ) -> TextureAsset
+    {
+        match self.get_asset_data().texture_asset
+        {
+            Some(texture) => {
+                texture
+            }
+            None => {println!("No Texture Data Found!");TextureAsset::new()}
+        }
+    }
     pub fn get_sound_data(&mut self) -> SoundData
     {
         match self.get_asset_data().sound_asset
@@ -224,6 +237,10 @@ impl Asset {
             {
                 let mut texture_asset = TextureAsset::new();
                 texture_asset.load(path, filename).await;
+                if filename.contains("_atlas") {
+                    texture_asset.tileset = true;
+                    texture_asset.grid = ((texture_asset.texture_data.width() / 16.0) as usize, (texture_asset.texture_data.height() / 16.0 ) as usize);
+                }
                 self.data.texture_asset = Some(texture_asset);
             },
             EAssetType::SoundFile => 
@@ -257,7 +274,7 @@ pub struct TextureAsset
 {
     pub texture_data: Texture2D,
     pub sheet_split: usize,
-
+    pub tileset: bool,
     pub grid: (usize, usize),
     pub animation: Animation,
     pub animation_controller: AnimationController,
@@ -269,6 +286,7 @@ impl TextureAsset
         Self { 
             texture_data: Texture2D::empty(),
             sheet_split: 0,
+            tileset: false,
             grid: sheet_size,
             animation: Animation::new(sheet_size),
             animation_controller: AnimationController::new(sheet_size),

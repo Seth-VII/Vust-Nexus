@@ -169,15 +169,15 @@ impl Enemy
     }
     
 
-    fn reset(&mut self)
+    pub fn reset(&mut self)
     {
         self.entity.entity_params = EntityParams::default();
         self.entity.transform.set_position(vec2(0.0,0.0));
         self.entity.is_active = false;
     }
-    pub fn set_enemytype(&mut self,e_type: EnemyType, world: &mut World)
+    pub fn set_enemytype(&mut self,e_type: &EnemyType, world: &mut World)
     {
-        self.variant = EnemyVariant::get_variant(e_type, world);
+        self.variant = EnemyVariant::get_variant(e_type.clone(), world);
         self.entity.entity_params = self.variant.params;
         self.entity.transform.set_size(self.variant.size);
         self.entity.set_rect_color(self.variant.color);
@@ -209,12 +209,6 @@ impl GameObject for Enemy
         }
     }
     fn update(&mut self, world: &mut World) {
-        if resolve_extended_deathzone(self.entity.transform.rect, world.level_offset)
-        {
-            //self.reset();
-            //world.set_entity(&mut self.entity);
-            //return;
-        }
 
         if self.entity.entity_params.health <= 0.0
         {

@@ -106,23 +106,26 @@ impl LevelLoader
         {
             Ok(spawnmap) => {
 
-                for spawner in level_data.enemy_spawner.iter_mut()
+                let mut found_spawner = 0;
+                for y in 0..spawnmap.height()
                 {
-                    for y in 0..spawnmap.height()
+                    for x in 0..spawnmap.width()
                     {
-                        for x in 0..spawnmap.width()
+                        if spawnmap.get_pixel(x as u32, y as u32).a == 1.0
                         {
-                            if spawnmap.get_pixel(x as u32, y as u32).r == 1.0
-                            {
+                            
+                            if found_spawner < level_data.enemy_spawner.len() {
                                 // 1 = Count of Enemies
-                                spawner.1 = (spawnmap.get_pixel(x as u32, y as u32).g * 255.0) as usize;
+                                level_data.enemy_spawner[found_spawner] .1 = (spawnmap.get_pixel(x as u32, y as u32).g * 255.0) as usize;
                                 // 2 = Type of Enemies
-                                spawner.2 = (spawnmap.get_pixel(x as u32, y as u32).b * 255.0) as usize;
+                                level_data.enemy_spawner[found_spawner] .2 = (spawnmap.get_pixel(x as u32, y as u32).b * 255.0) as usize;
+                                println!("Spawner Count: {}", level_data.enemy_spawner[found_spawner] .1);
+                                found_spawner += 1;
                             }
                         }
-                    } 
-                    println!("Spawner Count: {}", spawner.1);
-                }
+                    }
+                } 
+
             }
             Err(error) => {}
         }

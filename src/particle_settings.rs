@@ -1,6 +1,8 @@
 use super::*;
 
 
+// Predefined ParticleParams Settings for easier use and Overview inside the entities
+
 
 pub fn thruster_settings( position: Vec2,dir: Vec2 ) -> ParticleParams
 {    

@@ -19,7 +19,7 @@ pub fn resolve_deathzone(rect: Rect, level_progress: f32) -> bool
 }
 pub fn resolve_extended_deathzone(rect: Rect, level_progress: f32) -> bool
 {
-    rect.x < -400.0 + level_progress || rect.x + rect.w > 400.0 + GAME_SIZE_X as f32 + level_progress|| rect.y < 0.0 || rect.y + rect.h > GAME_SIZE_Y as f32
+    rect.x < -400.0 + level_progress || rect.x + rect.w > 400.0 + GAME_SIZE_X as f32 + level_progress|| rect.y < -200.0 || rect.y + rect.h > GAME_SIZE_Y as f32 + 200.0
 }
 pub fn inside_windowborder(rect: Rect, level_progress: f32, y_offset: f32) -> bool
 {

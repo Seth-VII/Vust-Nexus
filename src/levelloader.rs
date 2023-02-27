@@ -54,13 +54,13 @@ impl LevelLoader
             //"test_level.png",
             //"test_level_2.png",
             //"test_level_3.png",
-            //"Level_1.png",
+            "Level_1.png",
             "Level_2.png",
         ];
 
         let spawnmap_files = vec![
             //"test_level_3_SpawnMap.png",
-            //"Level_1_SpawnMap.png",
+            "Level_1_SpawnMap.png",
             "Level_2_SpawnMap.png",
         ];
 
@@ -145,6 +145,8 @@ impl LevelLoader
     {
         let mut new_level = LoadedLevelData::new();
 
+        let threshhold =20.0;
+
         let _wall = color_u8!(255,255,255,255);
         let _blocking_wall = color_u8!(180,180,180,255);
         let _trap_wall = color_u8!(255,1,128,255);
@@ -158,13 +160,13 @@ impl LevelLoader
             for x in 0..level_image.width()
             {
                 let position = vec2(x as f32, y as f32);
-                if level_image.get_pixel(x as u32, y as u32) == _wall
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _wall, threshhold)
                 {
                     new_level.walls.push( position );
                     
                 }
                 
-                if level_image.get_pixel(x as u32, y as u32) == _blocking_wall
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _blocking_wall, threshhold)
                 {
                     new_level.blockingWalls.push( position );
                     
@@ -173,25 +175,25 @@ impl LevelLoader
                 //println!("{:?}", level_image.get_pixel(x as u32, y as u32));
                 //println!("{:?}", _trap_wall);
                 // Color { r: 1.0, g: 0.0, b: 0.5019608, a: 1.0 }
-                if level_image.get_pixel(x as u32, y as u32) == _trap_wall
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _trap_wall, threshhold)
                 {
                     new_level.trapWalls.push( position );
 
                 }
-                if level_image.get_pixel(x as u32, y as u32) == _destructible
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _destructible, threshhold)
                 {
                     new_level.destructibles.push( position );
                 }
-                if level_image.get_pixel(x as u32, y as u32) == _enemyspawner
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _enemyspawner, threshhold)
                 {
                     let spawner = (position, 0,0);
                     new_level.enemy_spawner.push( spawner );
                 }
-                if level_image.get_pixel(x as u32, y as u32) == _turret
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _turret, threshhold)
                 {
                     new_level.turrets.push( position );
                 }
-                if level_image.get_pixel(x as u32, y as u32) == _level_end
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _level_end, threshhold)
                 {
                     new_level.level_end.push( position );
 
@@ -201,5 +203,18 @@ impl LevelLoader
         new_level
     }
     
+
+    fn compare_color_in_range(&self, col_1: Color, col_2: Color, range: f32) -> bool
+    {
+        let color_1 = col_1.to_vec() * 255.0;
+        let color_2 = col_2.to_vec() * 255.0;
+        if color_1.x >= (color_2.x - range) && color_1.x <= (color_2.x + range) &&
+        color_1.y >= (color_2.y - range) && color_1.y <= (color_2.y + range) &&
+        color_1.z >= (color_2.z - range) && color_1.z <= (color_2.z + range) &&
+        color_1.w >= (color_2.w - range) && color_1.w <= (color_2.w + range) {
+            return true;
+        }
+        return false;
+    }
     
 }

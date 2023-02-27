@@ -136,8 +136,8 @@ impl GameObject for Weapon
                         self.direction = (player.transform.position - self.entity.transform.position).normalize();
                         self.missle_spawn_offset = 65.0 * self.direction;
 
-                        let rotation = f32::atan2(self.direction.x, self.direction.y) *-1.0;
-                        self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0);     
+                        let rotation = f32::atan2(self.direction.x, self.direction.y) * -1.0;
+                        self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() + 90.0);     
                     }
                     None => {}
                 }

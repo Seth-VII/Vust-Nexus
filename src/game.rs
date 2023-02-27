@@ -298,6 +298,7 @@ impl Game {
         self.misslepool.update(&mut self.world);
         
         self.enemypool.update(&mut self.world);
+        self.enemypool.enemy_shoot(&mut self.misslepool, &mut self.world);
         //self.enemy_spawner.update(&mut self.world);
         //self.enemy_spawner.enemy_shoot(&mut self.misslepool, &mut self.world);
         self.player.update(&mut self.world);
@@ -334,7 +335,7 @@ impl Game {
         let text_size =  50.0;
         let text_width = text.chars().count() as f32 * text_size;
         let centered_position_x = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2) + self.world.level_offset;
-        draw_rectangle(0.0 + self.world.level_offset, 0.0, GAME_SIZE_X as f32 + self.world.level_offset, 80.0, BLACK);
+        //draw_rectangle(0.0 + self.world.level_offset, 0.0, GAME_SIZE_X as f32 + self.world.level_offset, 80.0, BLACK);
 
         draw_text(text.as_str(),centered_position_x, 60.0, text_size, WHITE);
     }
@@ -368,8 +369,8 @@ impl Game {
     
     pub fn load_level(&mut self)
     {
-        println!("Loader Data: {}", self.level_loader.levels[SELECTED_LEVEL].enemy_spawner[0].1 );
-        let mut level = Level::new(&mut self.world, self.level_loader.levels[SELECTED_LEVEL].clone());
+        println!("Loader Data: {}", self.level_loader.levels[self.selected_level].enemy_spawner.len() );
+        let mut level = Level::new(&mut self.world, self.level_loader.levels[self.selected_level].clone());
         level.init(&mut self.world);
         self.level = Some(level.clone());
         self.world.level =  Some(level);

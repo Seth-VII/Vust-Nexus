@@ -13,6 +13,7 @@ impl Level
 {
     pub fn new(world: &mut World, loaded: LoadedLevelData) -> Self
     {
+        println!("loaded data: {:?}", loaded.level_end);
         let mut leveldata = LevelData::new(50.0);
         leveldata.load_level_end(loaded.level_end, world);
         leveldata.load_walls(loaded.walls, world);
@@ -90,6 +91,7 @@ impl Level
         {
             enemyspawner_element.update(enemypool,world);
         }
+
     }
     pub fn update(&mut self, world: &mut World)
     {
@@ -182,6 +184,7 @@ impl LevelData
     }
     pub fn load_level_end(&mut self, level_end: Vec<Vec2>, world: &mut World)
     {
+        println!("Load End: ");
         let mut end_element = LevelEndElement::new(world);
         let mut y_size = 0.0;
         let mut pos_y = 0.0; 
@@ -194,6 +197,7 @@ impl LevelData
                 pos_y = level_end[0].y;
                 println!("{}", pos_y);
             } 
+            println!("Checked Tile: {} / {}", i, level_end.len());
         }
         end_element.entity.transform.set_size( vec2(1.0, y_size));
         end_element.entity.transform.set_scale( self.level_scale );
@@ -203,6 +207,7 @@ impl LevelData
     }
     pub fn load_walls(&mut self, walls: Vec<Vec2>, world: &mut World)
     {
+        println!("Load Walls: ");
         for i in 0..walls.len()
         {
             //println!("LevelData: {}", walls[i]);
@@ -214,11 +219,13 @@ impl LevelData
             wall.transform.rotation = self.rotate_tile();
             
             self.walls.push(wall);
+            println!("Wall: {} / {}", i, walls.len());
         }
     }
 
     pub fn load_blocking_walls(&mut self, blockingwalls: Vec<Vec2>, world: &mut World)
     {
+        println!("Load Collider: ");
         for i in 0..blockingwalls.len()
         {
             //println!("LevelData: {}", walls[i]);
@@ -231,28 +238,32 @@ impl LevelData
 
             world.set_entity(&mut wall.entity);
             self.blockingwalls.push(wall);
+            println!("Collider: {} / {}", i, blockingwalls.len());
         }
     }
 
     pub fn load_trap_walls(&mut self, trapwalls: Vec<Vec2>, world: &mut World)
     {
+        println!("Load Traps: ");
         for i in 0..trapwalls.len()
         {
             //println!("LevelData: {}", walls[i]);
-            let mut wall = TrapWallElement::new(world);
-            wall.entity.transform.set_size( vec2(1.0, 1.0));
-            wall.entity.transform.set_scale( self.level_scale );
-            wall.entity.transform.set_position_not_centered(trapwalls[i] * self.level_scale);
+            let mut trap = TrapWallElement::new(world);
+            trap.entity.transform.set_size( vec2(1.0, 1.0));
+            trap.entity.transform.set_scale( self.level_scale );
+            trap.entity.transform.set_position_not_centered(trapwalls[i] * self.level_scale);
 
-            wall.entity.transform.rotation = self.rotate_tile();
+            trap.entity.transform.rotation = self.rotate_tile();
 
-            world.set_entity(&mut wall.entity);
-            self.trapwalls.push(wall);
+            world.set_entity(&mut trap.entity);
+            self.trapwalls.push(trap);
+            println!("trap: {} / {}", i, trapwalls.len());
         }
     }
 
     pub fn load_destructibles(&mut self, destructibles: Vec<Vec2>, world: &mut World)
     {
+        println!("Load Destructibles: ");
         for i in 0..destructibles.len()
         {
             let mut destructible = DestructibleElement::new(world);
@@ -264,13 +275,15 @@ impl LevelData
 
             world.set_entity(&mut destructible.entity);
             self.destructibles.push(destructible);
+            println!("destructible: {} / {}", i, destructibles.len());
         }
     }
     pub fn load_enemyspawner(&mut self, e_spawner: Vec<(Vec2, usize, usize)>, world: &mut World)
     {
+        println!("Load Spawners: ");
         for i in 0..e_spawner.len()
         {
-            println!("Loader Spawner Count: {} | type: {}", e_spawner[i].1, e_spawner[i].2);
+            println!("Spawner   {} / {}  ||| Count: {} | type: {}", i, e_spawner.len(), e_spawner[i].1, e_spawner[i].2);
             let mut spawner_element = EnemySpawnerElement::new(e_spawner[i].1, e_spawner[i].2 ,world);
 
             // Apply Spawner Transform
@@ -287,6 +300,7 @@ impl LevelData
     }
     pub fn load_turrets(&mut self, turrets: Vec<Vec2>, world: &mut World)
     {
+        println!("Load turrets: ");
         for i in 0..turrets.len()
         {
             let mut turret = TurretElement::new(world);
@@ -295,6 +309,7 @@ impl LevelData
             turret.entity.transform.set_position_not_centered(turrets[i] * self.level_scale);
             world.set_entity(&mut turret.entity);
             self.turrets.push(turret);
+            println!("turrets: {} / {}", i, turrets.len());
         }
     }
 
@@ -387,10 +402,7 @@ impl WallElement
             sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
         } 
     }
-    pub fn place_wall(&mut self, position: Vec2)
-    {
-        self.transform.set_position(position);
-    }
+
     pub fn draw(&self)
     {
         if SHOW_COLLISION 
@@ -442,10 +454,7 @@ impl BlockingWallElement
             sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
         } 
     }
-    pub fn place_wall(&mut self, position: Vec2)
-    {
-        self.entity.transform.set_position(position);
-    }
+
     pub fn late_update(&mut self, world: &mut World)
     {
         self.entity.hit_cooldown();
@@ -501,10 +510,6 @@ impl TrapWallElement
             entity: entity, 
             sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset()  
         } 
-    }
-    pub fn place_wall(&mut self, position: Vec2)
-    {
-        self.entity.transform.set_position(position);
     }
     pub fn init(&mut self, world: &mut World)
     {
@@ -578,10 +583,6 @@ impl DestructibleElement
             entity: entity, 
             sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
         } 
-    }
-    pub fn place_destructible(&mut self, position: Vec2)
-    {
-        self.entity.transform.set_position(position);
     }
     pub fn update(&mut self, world: &mut World)
     {
@@ -675,6 +676,7 @@ impl EnemySpawnerElement
 
         let spawner = EnemySpawner::create_spawner(count, spawner_type, world);
 
+        println!("Spawner Element");
         Self { 
             entity: entity, 
             sprite: TextureAsset::new(), 
@@ -682,21 +684,22 @@ impl EnemySpawnerElement
             spawner: spawner,
         } 
     }
-
-    pub fn place_spawner(&mut self, position: Vec2)
-    {
-        self.entity.transform.set_position(position + vec2( 200.0, 0.0));
-    }
     
     pub fn update(&mut self, enemypool: &mut EnemyPool,world: &mut World)
     {
         if inside_windowborder(self.entity.transform.rect, world.level_offset, 200.0) {
             self.spawner.update(enemypool, world);
+            //self.entity.SetActive(true);
+            //world.set_entity(&mut self.entity);
+            println!("spawner {}", self.spawner.entity.transform.position);
+        }else if self.entity.is_active == true{
+            self.entity.SetActive(false);
+            world.set_entity(&mut self.entity);
         }
     }
     pub fn draw(&mut self)
     {
-        
+        //if !self.entity.is_active {return;}
         if SHOW_COLLISION  
         {
             draw_rectangle_lines(
@@ -707,9 +710,7 @@ impl EnemySpawnerElement
                 2.0,
                 self.color
             );
-        }
-        if !self.entity.is_active {return;}
-        if !SHOW_COLLISION {
+        }else {
             draw_rectangle(
                 self.entity.transform.rect.x, 
                 self.entity.transform.rect.y, 
@@ -718,7 +719,6 @@ impl EnemySpawnerElement
                 self.color
             );
         }
-
     }
 }
 
@@ -748,10 +748,6 @@ impl TurretElement
         weapon.entity.entity_params = params;
 
         Self { entity: entity, sprite: TextureAsset::new(), weapon: weapon} 
-    }
-    pub fn place_turret(&mut self, position: Vec2)
-    {
-        self.entity.transform.set_position(position);
     }
 
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)

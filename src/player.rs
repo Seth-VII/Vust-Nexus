@@ -27,9 +27,9 @@ impl Player
         params.health = 1000000.0;
         params.armor = 3.0;
         params.speed = 250.0;
-        params.damage = 2.0;
+        params.damage = 3.0;
         params.firerate = 50.0;
-        params.firespeed = 400.0;
+        params.firespeed = 600.0;
         entity.entity_params = params;
 
         let sprite = world.assets.get_asset_by_id(4).get_texture_asset();

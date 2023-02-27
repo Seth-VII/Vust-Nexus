@@ -23,8 +23,7 @@ pub struct Game
 
     misslepool: MisslePool,
     enemypool: EnemyPool,
-    spawnerpool: EnemySpawnerPool,
-    //enemy_spawner: EnemySpawner,
+
     player: Player,
 }
 impl Game {
@@ -247,9 +246,7 @@ impl Game {
         let mut enemypool = EnemyPool::new();
         enemypool.create_pool(128, &mut world);
 
-        let mut spawnerpool = EnemySpawnerPool::new();
-        //spawnerpool.apply_spawnerpool( &world.level.as_ref().unwrap().get_spawners());
-        //let mut enemy_spawner = EnemySpawner::new();
+
         let mut player = Player::new(&mut world);
         
         //enemy_spawner.create_pool(32, &mut world);
@@ -278,8 +275,7 @@ impl Game {
 
             misslepool: misslepool,
             enemypool: enemypool,
-            spawnerpool: spawnerpool,
-            //enemy_spawner: enemy_spawner,
+
             player: player,
         }
 

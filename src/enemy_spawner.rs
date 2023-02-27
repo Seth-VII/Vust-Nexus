@@ -1,59 +1,6 @@
 use macroquad::rand::{gen_range, RandomRange};
 use super::*;
 
-pub struct EnemySpawnerPool
-{
-    pool: Vec<EnemySpawner>
-}
-impl EnemySpawnerPool
-{
-    pub fn new () -> Self { 
-
-        Self { 
-            pool: Vec::new(),
-        } 
-    }
-    pub fn apply_spawnerpool( &mut self, pool: &Vec<EnemySpawner>)
-    {
-        self.pool = pool.clone();
-    }
-
-    pub fn update(&mut self, enemypool: &mut EnemyPool, world: &mut World)
-    {
-        for spawner in self.pool.iter_mut()
-        {
-            if inside_windowborder(spawner.entity.transform.rect, world.level_offset, 200.0) 
-            {
-
-                if spawner.spawned < spawner.spawn_count
-                { 
-                    if spawner.time > 0.0
-                    {
-                        spawner.time -= 1.0 * get_frame_time();
-                    }else {
-                        spawner.time = spawner.spawn_duration;
-                        // Spawn
-                        enemypool.spawn_enemy( spawner.entity.transform.get_centered_position(), &spawner.spawner_type, world);
-                        spawner.spawned += 1;
-                    }
-                }
-                println!("{}", spawner.spawned );
-                world.set_entity(&mut spawner.entity);
-            }  
-        }
-    }
-    pub fn late_update(&mut self, world: &mut World) {
-        // Only activate inside Windowborder
-        for spawner in self.pool.iter_mut()
-        {
-            if inside_windowborder(spawner.entity.transform.rect, world.level_offset, 200.0) 
-            {
-                spawner.entity.is_active = true; 
-                world.set_entity(&mut spawner.entity);
-            }
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct EnemySpawner
@@ -73,8 +20,11 @@ impl EnemySpawner
 
         let enemy_type = match spawner_type {
             0 => { EnemyType::Default},
-            1 => { EnemyType::Heavy},
+            1 => { EnemyType::Tank},
             2 => { EnemyType::Gunner},
+            3 => { EnemyType::HeavyGunner},
+            4 => { EnemyType::Exploder},
+            5 => { EnemyType::Boss},
             _ => { EnemyType::Default},
         };
 

@@ -61,6 +61,9 @@ pub use player::*;
 mod enemy;
 pub use enemy::*;
 
+mod enemytypes;
+pub use enemytypes::*;
+
 mod enemy_spawner;
 pub use enemy_spawner::*;
 

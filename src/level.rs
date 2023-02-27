@@ -596,7 +596,7 @@ impl DestructibleElement
         {
             self.entity.is_active = false;
             self.entity.entity_params.health = 1.0;
-            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, Explosion_settings(YELLOW, RED, BLUE));
+            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, explosion_settings(YELLOW, RED, color_u8!(255,255,0,0)));
             self.entity.transform = Transform::zero();
             world.set_entity(&mut self.entity);
             return;
@@ -676,7 +676,7 @@ impl EnemySpawnerElement
 
         let spawner = EnemySpawner::create_spawner(count, spawner_type, world);
 
-        println!("Spawner Element");
+        //println!("Spawner Element");
         Self { 
             entity: entity, 
             sprite: TextureAsset::new(), 
@@ -691,7 +691,7 @@ impl EnemySpawnerElement
             self.spawner.update(enemypool, world);
             //self.entity.SetActive(true);
             //world.set_entity(&mut self.entity);
-            println!("spawner {}", self.spawner.entity.transform.position);
+            //println!("spawner {}", self.spawner.entity.transform.position);
         }else if self.entity.is_active == true{
             self.entity.SetActive(false);
             world.set_entity(&mut self.entity);
@@ -772,7 +772,7 @@ impl TurretElement
         {
             self.entity.is_active = false;
             self.entity.entity_params.health = 1.0;
-            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, Explosion_settings(YELLOW, RED, BLUE));
+            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, explosion_settings(YELLOW, RED, color_u8!(255,255,0,0)));
             self.entity.transform = Transform::zero();
             world.set_entity(&mut self.entity);
             return;

@@ -113,9 +113,8 @@ impl Game {
                     play_sound(self.world.assets.get_asset_by_name("explosion_1".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
 
                 }
-                
+
                 self.draw();
-                self.world.particlesystem_pool.draw();
                 self.update_score();
             }
             GameState::GameOver => {
@@ -319,7 +318,8 @@ impl Game {
     {
         self.world.level.as_mut().unwrap().draw();
 
-        
+        self.world.particlesystem_pool.draw();
+                        
         self.viewspace.draw();
         //self.enemy_spawner.draw();
         

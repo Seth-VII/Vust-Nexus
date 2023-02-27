@@ -53,7 +53,7 @@ impl EnemyVariant
             
         }
 
-        let color = WHITE;
+        let color = GREEN;
 
         let weapon = None;
 
@@ -88,7 +88,7 @@ impl EnemyVariant
             size = vec2(sprite.width(), sprite.height()) * 3.0;
         }
 
-        let color = WHITE;
+        let color = PURPLE;
 
         let weapon = None;
 
@@ -125,7 +125,7 @@ impl EnemyVariant
             size = vec2(sprite.width(), sprite.height()) * 1.5;
         }
 
-        let color = WHITE;
+        let color = RED;
 
         let mut weapon = Weapon::new("Gunner Weapon", "Enemy Weapon", world);
         weapon.entity.entity_params = params;

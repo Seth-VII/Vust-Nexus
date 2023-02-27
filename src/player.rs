@@ -164,7 +164,11 @@ impl GameObject for Player
         } else if is_key_down(KeyCode::W) {
             spawn_position.y = self.entity.transform.rect.y + (draw_scale.y * 0.5);
         }
-        world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 2, thruster_settings(spawn_position,vec2(-5.0, 0.0)));
+        world.particlesystem_pool.spawn_system_at_position(
+            self.entity.transform.position, 
+            2, 
+            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!(255, 0, 255, 0), vec2(-3.0, 3.0))
+        );
         
 
         // WEAPON

@@ -4,32 +4,32 @@ use super::*;
 // Predefined ParticleParams Settings for easier use and Overview inside the entities
 
 
-pub fn thruster_settings( position: Vec2,dir: Vec2 ) -> ParticleParams
+pub fn thruster_settings( position: Vec2,dir: Vec2, color_tint: Color, spreading_range: Vec2 ) -> ParticleParams
 {    
 
     let mut params : ParticleParams = ParticleParams { 
-        spawn_rate: 2.0,
+        spawn_rate: 0.5,
         spawn_count: 1,
 
-        lifetime: 2.0,
+        lifetime: 1.2,
 
         color_begin: WHITE, 
-        color_end: color_u8!(255, 0, 255, 0),
+        color_end: color_tint,
 
-        size_begin: vec2(18.0, 18.0), 
+        size_begin: vec2(10.0, 10.0), 
         render_scale: 1.0,
 
         use_velocity: true,
         spawn_position: position, 
         velocity: dir, 
         
-        speed_begin: 5.0,
+        speed_begin: 3.0,
         speed_end: 1.0,
         ..Default::default()
     };
     params.randomize_velocity( 
         vec2(0.0, 2.0),
-        vec2(-5.0, 5.0)
+        spreading_range
     );
 
     params
@@ -97,7 +97,7 @@ pub fn fire_settings( position: Vec2,dir: Vec2  ) -> ParticleParams
 }
 
 
-pub fn Explosion_settings( color_1: Color,  color_2: Color , color_end: Color ) -> ParticleParams
+pub fn explosion_settings( color_1: Color,  color_2: Color , color_end: Color ) -> ParticleParams
 {
     // XMin , XMax , YMin , YMax
     // | Right X | Left -X |  Bottom Y | Top -Y |

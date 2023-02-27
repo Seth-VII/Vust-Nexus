@@ -34,10 +34,12 @@ impl ParticleSystemPool
 
     pub fn update(&mut self,world: &mut World)
     {
+        self.pool.retain(|p| p.is_active == true);
         for ps in self.pool.iter_mut()
         {
             ps.update_particles(world);
         }
+        println!("PS_Pool Len: {}", self.pool.len());
     }
     pub fn draw(&mut self)
     {

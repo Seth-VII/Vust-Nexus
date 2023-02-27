@@ -34,7 +34,7 @@ impl Enemy
         self.variant = EnemyVariant::get_variant(e_type.clone(), world);
         self.entity.entity_params = self.variant.params;
         self.entity.transform.set_size(self.variant.size);
-        self.entity.set_rect_color(self.variant.color);
+        //self.entity.set_rect_color(self.variant.color);
     }
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
     {
@@ -63,14 +63,15 @@ impl GameObject for Enemy
         }
     }
     fn update(&mut self, world: &mut World) {
-
+        
+        let color =  color_u8!( self.variant.color.r * 255.0, self.variant.color.g * 255.0, self.variant.color.b * 255.0, 0);
         if self.entity.entity_params.health <= 0.0
         {
             let mut params = PlaySoundParams::default();
             params.volume = 0.5;
             play_sound(world.assets.get_asset_by_name("explosion_2".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
 
-            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 128, Explosion_settings( ORANGE, WHITE, DARKPURPLE));
+            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 128, explosion_settings( self.variant.color, WHITE, color));
 
             self.reset();
             world.add_scorepoints( self.variant.points);
@@ -88,6 +89,20 @@ impl GameObject for Enemy
         
         let rotation = f32::atan2(dir.x, dir.y) * -1.0;
         self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 270.0);
+
+
+
+        // Thruster Particle Adjustment
+        let mut spawn_position = position + (dir * 10.0);
+
+        
+
+        world.particlesystem_pool.spawn_system_at_position(
+            self.entity.transform.position, 
+            1, 
+            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!( color.r * 255.0, color.g * 255.0, color.b * 255.0, 0), vec2(-3.0, 3.0))
+        );
+
 
         match &mut self.variant.weapon
         {
@@ -131,13 +146,14 @@ impl GameObject for Enemy
         {
             draw_rectangle_lines(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, 2.0,COLLISION_COLOR);
         }
-
+        /*
         draw_text(
             format!("E: {} | HP : {}",self.enemy_id , self.entity.entity_params.health).as_str(), 
             self.entity.transform.position.x, 
             self.entity.transform.position.y, 
             16.0, 
             BLACK);
+        */
         match &mut self.variant.weapon
         {
             Some(weapon) => {

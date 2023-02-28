@@ -1,5 +1,5 @@
-use std::{mem::MaybeUninit, thread::spawn};
 
+use macroquad::audio::{play_sound, PlaySoundParams};
 use macroquad::rand::gen_range;
 
 use super::*;
@@ -705,7 +705,7 @@ impl EnemySpawnerElement
         }else 
         {
             self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
-            self.entity.transform.set_scale( 2.0);
+            self.entity.transform.set_scale( 4.0);
         }
     }
     pub fn update(&mut self, enemypool: &mut EnemyPool,world: &mut World)
@@ -734,7 +734,12 @@ impl EnemySpawnerElement
         {
             self.entity.is_active = false;
             self.entity.entity_params.health = 1.0;
-            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, explosion_settings(YELLOW, RED, color_u8!(255,255,0,0)));
+
+            let mut params = PlaySoundParams::default();
+            params.volume = 0.5;
+            play_sound(world.assets.get_asset_by_name("explosion_3".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
+
+            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, explosion_settings(MAGENTA, RED, color_u8!(255,0,255,0)));
             self.entity.transform = Transform::zero();
             world.set_entity(&mut self.entity);
             return;
@@ -765,14 +770,14 @@ impl EnemySpawnerElement
         }else {
             let frame = self.sprite.get_current_anim_controller_frame(); 
             let mut params = DrawTextureParams::default();
-            params.dest_size = Some(vec2( self.entity.transform.rect.w + 40.0, self.entity.transform.rect.h + 40.0));
+            params.dest_size = Some(self.entity.transform.get_fullsize());
             params.rotation = self.entity.transform.rotation;
             params.source = frame;
 
 
             draw_texture_ex(self.sprite.texture_data, 
-                self.entity.transform.rect.x - 20.0, 
-                self.entity.transform.rect.y- 20.0, 
+                self.entity.transform.rect.x, 
+                self.entity.transform.rect.y, 
                 self.entity.get_rect_color(), params);
         }
     }

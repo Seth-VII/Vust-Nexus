@@ -81,6 +81,7 @@ impl AssetLibrary
             "player_missle_1.png",
             "tile_texture_atlas.png",
             "weapon_sheet.png",
+            "spawner_sheet.png",
 
             "enemy_laserShoot_1.wav",
             "explosion_1.wav",

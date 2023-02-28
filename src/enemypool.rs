@@ -79,7 +79,7 @@ impl GameObject for EnemyPool
         {
             if enemy.entity.is_active
             {
-                if resolve_extended_deathzone(enemy.entity.transform.rect, world.level_offset)
+                if !inside_windowborder_extended_sides(enemy.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, 600.0))
                 {
                     enemy.reset();
                     enemy.entity.is_active = false;

@@ -80,6 +80,10 @@ impl Level
         {
             trap_wall_element.init(world);
         }
+        for enemyspawner_element in self.leveldata.enemy_spawner.iter_mut()
+        {
+            enemyspawner_element.init(world);
+        }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
             turret_element.init(world);
@@ -114,6 +118,10 @@ impl Level
         for destructible_element in self.leveldata.destructibles.iter_mut()
         {
             destructible_element.late_update(world);
+        }
+        for enemyspawner_element in self.leveldata.enemy_spawner.iter_mut()
+        {
+            enemyspawner_element.late_update(world);
         }
         for turret_element in self.leveldata.turrets.iter_mut()
         {
@@ -292,7 +300,7 @@ impl LevelData
             spawner_element.entity.transform.set_position_not_centered(e_spawner[i].0 * self.level_scale);
 
             spawner_element.spawner.set_transform(&spawner_element.entity.transform);
-
+            spawner_element.entity.transform.rotation = self.rotate_tile();
              // Apply Spawner To World
             world.set_entity(&mut spawner_element.entity);
             self.enemy_spawner.push(spawner_element);
@@ -674,27 +682,71 @@ impl EnemySpawnerElement
         params.armor = 5.0;
         entity.entity_params = params;
 
+        entity.hit_feedback_timer = 0.001;
         let spawner = EnemySpawner::create_spawner(count, spawner_type, world);
 
         //println!("Spawner Element");
         Self { 
             entity: entity, 
-            sprite: TextureAsset::new(), 
+            sprite: world.assets.get_asset_by_name("spawner_sheet".to_string()).as_mut().unwrap().get_texture_asset(),
             color: RED,
             spawner: spawner,
         } 
     }
-    
+    pub fn init(&mut self, world: &mut World)
+    {
+        self.sprite.setup_sheet(4, 2);
+        self.sprite.animation_controller.apply_state_setup( StateMachineSetup::spawner_setup() );
+        self.sprite.animation_controller.get_statemachine_mut().SetState(0);
+        self.sprite.animation_controller.play_anim_once();
+        if self.sprite.texture_data == Texture2D::empty()
+        {
+            self.entity.transform.set_size(vec2(60.0,60.0));
+        }else 
+        {
+            self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
+            self.entity.transform.set_scale( 2.0);
+        }
+    }
     pub fn update(&mut self, enemypool: &mut EnemyPool,world: &mut World)
     {
-        if inside_windowborder(self.entity.transform.rect, world.level_offset, 200.0) {
-            self.spawner.update(enemypool, world);
-            //self.entity.SetActive(true);
-            //world.set_entity(&mut self.entity);
-            //println!("spawner {}", self.spawner.entity.transform.position);
-        }else if self.entity.is_active == true{
-            self.entity.SetActive(false);
+        if !self.entity.is_active {return;}
+        if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, -100.0)) 
+        {
+            if !self.sprite.animation_controller.get_statemachine_mut().animation_states[0].is_playing() &&
+            !self.sprite.animation_controller.get_statemachine_mut().animation_states[1].is_playing()
+            {
+                self.sprite.animation_controller.get_statemachine_mut().SetState(1);
+                self.sprite.animation_controller.play_anim_once();
+            }
+        }
+        if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, 600.0)) {
+            if self.entity.entity_params.health > 0.0
+            {
+                self.spawner.update(enemypool, world);
+            }
+        }
+    }
+    pub fn late_update(&mut self, world: &mut World)
+    {
+        if !self.entity.is_active {return;}
+        if self.entity.entity_params.health <= 0.0
+        {
+            self.entity.is_active = false;
+            self.entity.entity_params.health = 1.0;
+            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, explosion_settings(YELLOW, RED, color_u8!(255,255,0,0)));
+            self.entity.transform = Transform::zero();
             world.set_entity(&mut self.entity);
+            return;
+        }
+        self.entity.hit_cooldown();
+        if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, -50.0)) 
+        {
+            self.sprite.animation_controller.update();
+        }
+        for entity in world.get_actives().iter_mut()
+        {
+            self.on_collision( entity);
         }
     }
     pub fn draw(&mut self)
@@ -711,16 +763,40 @@ impl EnemySpawnerElement
                 self.color
             );
         }else {
-            draw_rectangle(
-                self.entity.transform.rect.x, 
-                self.entity.transform.rect.y, 
-                self.entity.transform.rect.w, 
-                self.entity.transform.rect.h, 
-                self.color
-            );
+            let frame = self.sprite.get_current_anim_controller_frame(); 
+            let mut params = DrawTextureParams::default();
+            params.dest_size = Some(vec2( self.entity.transform.rect.w + 40.0, self.entity.transform.rect.h + 40.0));
+            params.rotation = self.entity.transform.rotation;
+            params.source = frame;
+
+
+            draw_texture_ex(self.sprite.texture_data, 
+                self.entity.transform.rect.x - 20.0, 
+                self.entity.transform.rect.y- 20.0, 
+                self.entity.get_rect_color(), params);
         }
     }
 }
+
+impl Collision for EnemySpawnerElement
+{
+    fn on_collision(&mut self, entity: &mut Entity) {
+        if !resolve_intersection(self.entity.transform.rect,entity.transform.rect)
+        {
+            return;
+        }
+        //let mut params = PlaySoundParams::default();
+        //params.volume = 0.15;
+        match entity.tag.as_str()
+        {
+            "Player Weapon Missle" => {
+                self.entity.hit(&entity.entity_params);
+                //play_sound(self.sfx_on_hit.sound.unwrap(), params);
+            }
+            _ => {}
+        }
+    }
+} 
 
 #[derive(Clone)]
 pub struct TurretElement

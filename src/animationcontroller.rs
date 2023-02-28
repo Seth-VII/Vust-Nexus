@@ -214,7 +214,9 @@ impl AnimationState
         animation.set_animation_speed(self.speed);
         self.animation =  Some(animation);
     }
-    
+    pub fn is_playing(&self) -> bool {
+        self.is_playing
+    }
     pub fn play(&mut self)
     {
         if self.animation.is_none() {return;}
@@ -320,17 +322,31 @@ impl StateMachineSetup {
     {
         let mut states = Vec::new();
 
-        let idle = AnimationState::new(0,3, true, 25.0);
-        let down = AnimationState::new(4,7, false, 25.0);
-        let up = AnimationState::new(8,11, false, 25.0);
+        let idle = AnimationState::new(0,20, true, 5.0);
+        //let down = AnimationState::new(4,7, false, 25.0);
+        //let up = AnimationState::new(8,11, false, 25.0);
 
         states.push(idle);
-        states.push(down);
-        states.push(up);
+        //states.push(down);
+        //states.push(up);
 
         Self { animation_states: states, default_state: 0}
     }
     
+    pub fn spawner_setup()  -> Self
+    {
+        let mut states = Vec::new();
+
+        let grow = AnimationState::new(0,7, false, 0.5);
+        let spawn = AnimationState::new(4,7, true, 10.0);
+        //let up = AnimationState::new(8,11, false, 25.0);
+
+        states.push(grow);
+        states.push(spawn);
+        //states.push(up);
+
+        Self { animation_states: states, default_state: 1}
+    }
     
     //pub fn get_statemachine(&self) -> &StateMachine {&self.statemachine}
 }

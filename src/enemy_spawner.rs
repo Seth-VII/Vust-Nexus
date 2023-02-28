@@ -62,6 +62,6 @@ impl EnemySpawner
     pub fn spawn(&mut self ,enemypool: &mut EnemyPool, world: &mut World)
     {
         //println!("spawn");
-        enemypool.spawn_enemy( self.entity.transform.get_centered_position(), &self.spawner_type, world);
+        enemypool.spawn_enemy( self.entity.transform.position + self.entity.transform.get_halfsize(), &self.spawner_type, world);
     }
 }

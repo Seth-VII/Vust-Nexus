@@ -10,6 +10,8 @@ pub struct Player
 
     reached_end: bool,
 
+    ship_angle: f32,
+
     sfx_move: SoundData,
     sfx_shoot: SoundData,
     sfx_on_hit: SoundData,
@@ -43,6 +45,8 @@ impl Player
 
             reached_end: false,
 
+            ship_angle: 0.0,
+
             sfx_move:  world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
             sfx_shoot: world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
             sfx_on_hit: world.assets.get_asset_by_name("hurt_sound_1".to_string()).unwrap().get_sound_data(),
@@ -66,7 +70,7 @@ impl Player
 impl GameObject for Player
 {
     fn init(&mut self, world: &mut World) {
-        self.sprite.setup_sheet(4, 4);
+        self.sprite.setup_sheet(10, 2);
         self.sprite.animation_controller.apply_state_setup( StateMachineSetup::player_setup() );
         self.sprite.animation_controller.play_anim_once();
 
@@ -153,17 +157,41 @@ impl GameObject for Player
 
 
         // Thruster Particle Adjustment
-        let draw_scale = self.entity.transform.get_fullsize() * 3.0;
+        let draw_scale = self.entity.transform.get_fullsize();
         let mut spawn_position = vec2(
-            self.entity.transform.rect.x - (draw_scale.x * 0.333), 
-            self.entity.transform.rect.y + (draw_scale.y * 0.2), 
+            self.entity.transform.rect.x + (self.entity.transform.get_fullsize().x * 0.1), 
+            self.entity.transform.rect.y + (self.entity.transform.get_fullsize().y * 0.4), 
         );
 
+
+        
+
+
         if is_key_down(KeyCode::S) {
-            spawn_position.y = self.entity.transform.rect.y - (draw_scale.y * 0.2);
+            spawn_position = vec2( self.entity.transform.rect.x + (draw_scale.x * 0.2), self.entity.transform.rect.y - (draw_scale.y * 0.2));
+            if self.ship_angle < 25.0
+            {
+                self.ship_angle += 350.0 * get_frame_time();
+            }
         } else if is_key_down(KeyCode::W) {
-            spawn_position.y = self.entity.transform.rect.y + (draw_scale.y * 0.5);
+            spawn_position = vec2( self.entity.transform.rect.x + (draw_scale.x * 0.2),self.entity.transform.rect.y + (draw_scale.y * 0.8));
+            if self.ship_angle > -25.0
+            {
+                self.ship_angle -= 350.0 * get_frame_time();
+            }
+        }else {
+            if self.ship_angle < 0.0
+            {
+                self.ship_angle += 350.0 * get_frame_time();
+            }
+            if self.ship_angle > 0.0
+            {
+                self.ship_angle -= 350.0 * get_frame_time();
+            }
         }
+
+
+        self.entity.transform.rotation = f32::to_radians(self.ship_angle);
         world.particlesystem_pool.spawn_system_at_position(
             self.entity.transform.position, 
             2, 
@@ -185,11 +213,11 @@ impl GameObject for Player
         self.weapon.late_update(world);
 
         if is_key_down(KeyCode::W) {
-            self.sprite.animation_controller.get_statemachine_mut().SetState(2);
+            //self.sprite.animation_controller.get_statemachine_mut().SetState(2);
         } else if is_key_down(KeyCode::S) {
-            self.sprite.animation_controller.get_statemachine_mut().SetState(1);
+            //self.sprite.animation_controller.get_statemachine_mut().SetState(1);
         } else {
-            self.sprite.animation_controller.get_statemachine_mut().SetState(0);
+            //self.sprite.animation_controller.get_statemachine_mut().SetState(0);
         }
         
         self.sprite.animation_controller.update();
@@ -207,9 +235,9 @@ impl GameObject for Player
         {
             
             let frame = self.sprite.get_current_anim_controller_frame(); 
-            let draw_scale = self.entity.transform.get_fullsize() * 3.0;
+            //let draw_scale = self.entity.transform.get_fullsize() * 3.0;
             let params = DrawTextureParams { 
-                dest_size: Some(draw_scale), 
+                dest_size: Some(self.entity.transform.get_fullsize()), 
                 rotation: self.entity.transform.rotation,
                 source: frame,
                 ..Default::default() 
@@ -217,8 +245,8 @@ impl GameObject for Player
 
             draw_texture_ex(
                 self.sprite.texture_data, 
-                self.entity.transform.rect.x - (draw_scale.x * 0.333), 
-                self.entity.transform.rect.y - (draw_scale.y * 0.333), 
+                self.entity.transform.rect.x , 
+                self.entity.transform.rect.y , 
                 self.entity.get_rect_color(), 
                 params);
         }

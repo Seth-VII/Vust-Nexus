@@ -521,11 +521,7 @@ impl TrapWallElement
     }
     pub fn init(&mut self, world: &mut World)
     {
-        let mut params = EntityParams::default();
-        params.health = 50.0;
-        params.armor = 3.0;
-        params.damage = 100000.0;
-        self.entity.entity_params = params;
+        self.entity.entity_params = EntitySettings::trap_settings();
         self.entity.set_rect_color(MAGENTA);
         world.set_entity(&mut self.entity);
     }
@@ -579,11 +575,8 @@ impl DestructibleElement
 {
     pub fn new(world: &mut World) -> Self { 
         let mut entity = Entity::new("Destructible Wall", "Destructible", world);
-        let mut params = EntityParams::default();
-        params.health = 10.0;
-        params.armor = 5.0;
+        entity.entity_params = EntitySettings::destructible_settings();
 
-        entity.entity_params = params;
         entity.set_rect_color(WHITE);
         entity.hit_feedback_timer = 0.001;
 
@@ -677,10 +670,7 @@ impl EnemySpawnerElement
 {
     pub fn new(count: usize, spawner_type: usize,world: &mut World) -> Self { 
         let mut entity = Entity::new("EnemySpawner", "EnemySpawner", world);
-        let mut params = EntityParams::default();
-        params.health = 10.0;
-        params.armor = 5.0;
-        entity.entity_params = params;
+        entity.entity_params = EntitySettings::spawner_settings();
 
         entity.hit_feedback_timer = 0.001;
         let spawner = EnemySpawner::create_spawner(count, spawner_type, world);
@@ -814,19 +804,13 @@ impl TurretElement
 {
     pub fn new(world: &mut World) -> Self { 
         let mut entity = Entity::new("Turret", "Turret", world);
-        let mut params = EntityParams::default();
-        params.health = 10.0;
-        params.armor = 5.0;
-        params.damage = 3.0;
-        params.firerate = 10.0;
-        params.firespeed = 300.0;
+        entity.entity_params = EntitySettings::turret_settings();
 
-        entity.entity_params = params;
         entity.set_rect_color(BLUE);
         entity.hit_feedback_timer = 0.001;
 
         let mut weapon = Weapon::new("Turret", "Enemy Weapon", world);
-        weapon.entity.entity_params = params;
+        weapon.entity.entity_params = entity.entity_params;
 
         Self { entity: entity, sprite: TextureAsset::new(), weapon: weapon} 
     }

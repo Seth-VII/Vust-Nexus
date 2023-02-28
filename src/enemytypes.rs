@@ -30,9 +30,9 @@ impl EnemyVariant
         match e_type
         {
             EnemyType::Default =>   {return EnemyVariant::default_variant(world);}
-            EnemyType::Tank =>     {return EnemyVariant::heavy_variant(world);}
+            EnemyType::Tank =>     {return EnemyVariant::tank_variant(world);}
             EnemyType::Gunner =>    {return EnemyVariant::gunner_variant(world);}
-            EnemyType::HeavyGunner =>     {return EnemyVariant::heavy_variant(world);}
+            EnemyType::HeavyGunner =>     {return EnemyVariant::tank_variant(world);}
             EnemyType::Exploder =>    {return EnemyVariant::gunner_variant(world);}
             EnemyType::Boss =>    {return EnemyVariant::gunner_variant(world);}
         }
@@ -40,11 +40,7 @@ impl EnemyVariant
     fn default_variant(world: &mut World) -> Self
     {
         let sprite = world.assets.get_asset_by_id(1).get_texture_data();
-        let mut params = EntityParams::default();
-        params.health = 5.0;
-        params.speed = 250.0;
-        params.armor = 2.0;
-        params.damage = 2.0;
+        let params = EntitySettings::enemy_default_settings();
 
         let mut size = vec2(80.0, 80.0);
         if sprite != Texture2D::empty()
@@ -73,14 +69,10 @@ impl EnemyVariant
             sfx_explosion:  world.assets.get_asset_by_name("explosion_1".to_string()).unwrap().get_sound_data(),
         }
     }
-    fn heavy_variant(world: &mut World) -> Self
+    fn tank_variant(world: &mut World) -> Self
     {
         let sprite = world.assets.get_asset_by_id(0).get_texture_data();
-        let mut params = EntityParams::default();
-        params.health = 10.0;
-        params.speed = 170.0;
-        params.armor = 5.0;
-        params.damage = 3.0;
+        let params = EntitySettings::enemy_tank_settings();
 
         let mut size = vec2(120.0, 120.0);
         if sprite != Texture2D::empty()
@@ -111,13 +103,7 @@ impl EnemyVariant
     fn gunner_variant(world: &mut World) -> Self
     {
         let sprite = world.assets.get_asset_by_id(2).get_texture_data();
-        let mut params = EntityParams::default();
-        params.health = 3.0;
-        params.speed = 200.0;
-        params.armor = 2.0;
-        params.damage = 1.0;
-        params.firerate = 1.0;
-        params.firespeed = 250.0;
+        let params = EntitySettings::enemy_gunner_settings();
 
         let mut size = vec2(80.0, 80.0);
         if sprite != Texture2D::empty()

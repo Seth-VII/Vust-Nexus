@@ -55,6 +55,9 @@ pub use game::*;
 mod gamestate;
 pub use gamestate::*;
 
+mod entityparam_settings;
+pub use entityparam_settings::*;
+
 mod player;
 pub use player::*;
 

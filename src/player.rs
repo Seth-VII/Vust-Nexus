@@ -25,14 +25,7 @@ impl Player
         
         let mut entity = Entity::new("Player", "Player", world);
 
-        let mut params = EntityParams::default();
-        params.health = 1000000.0;
-        params.armor = 3.0;
-        params.speed = 250.0;
-        params.damage = 3.0;
-        params.firerate = 50.0;
-        params.firespeed = 600.0;
-        entity.entity_params = params;
+        entity.entity_params = EntitySettings::player_settings();
 
         let sprite = world.assets.get_asset_by_id(4).get_texture_asset();
 

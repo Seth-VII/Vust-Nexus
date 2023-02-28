@@ -48,7 +48,7 @@ impl Player
     }  
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
     {
-        if is_key_down(KeyCode::Space)
+        if is_key_down(KeyCode::Space) || is_mouse_button_down(MouseButton::Left)
         {
             self.weapon.set_stats( self.entity.entity_params.damage, self.entity.entity_params.firerate, self.entity.entity_params.firespeed);
             if self.weapon.shoot( misslepool, world)
@@ -58,6 +58,48 @@ impl Player
                 play_sound( self.sfx_shoot.sound.unwrap(), params)
             }
         }
+    }
+    pub fn update_ship_visuals(&mut self, world: &mut World)
+    {
+        // Thruster Particle Adjustment
+        let draw_scale = self.entity.transform.get_fullsize();
+        let mut spawn_position = vec2(
+            self.entity.transform.rect.x + (self.entity.transform.get_fullsize().x * 0.1), 
+            self.entity.transform.rect.y + (self.entity.transform.get_fullsize().y * 0.4), 
+        );
+
+        if is_key_down(KeyCode::S) {
+            spawn_position = vec2( self.entity.transform.rect.x + (draw_scale.x * 0.2), self.entity.transform.rect.y - (draw_scale.y * 0.2));
+            if self.ship_angle < 25.0
+            {
+                self.ship_angle += 350.0 * get_frame_time();
+            }
+        } else if is_key_down(KeyCode::W) {
+            spawn_position = vec2( self.entity.transform.rect.x + (draw_scale.x * 0.2),self.entity.transform.rect.y + (draw_scale.y * 0.8));
+            if self.ship_angle > -25.0
+            {
+                self.ship_angle -= 350.0 * get_frame_time();
+            }
+        }else {
+            if self.ship_angle < 0.0
+            {
+                self.ship_angle += 350.0 * get_frame_time();
+            }
+            if self.ship_angle > 0.0
+            {
+                self.ship_angle -= 350.0 * get_frame_time();
+            }
+        }
+
+
+        self.entity.transform.rotation = f32::to_radians(self.ship_angle);
+        world.particlesystem_pool.spawn_system_at_position(
+            self.entity.transform.position, 
+            2, 
+            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!(255, 0, 255, 0), vec2(-3.0, 3.0))
+        );
+        
+
     }
 }
 impl GameObject for Player
@@ -85,6 +127,11 @@ impl GameObject for Player
         self.entity.hit_cooldown();
         if self.reached_end {
             world.level_completed = true;
+            self.entity.transform.set_position( vec2(self.entity.transform.position.x + LEVEL_SPEED * get_frame_time(), self.entity.transform.position.y));
+            self.update_ship_visuals(world);
+            // WEAPON
+            self.weapon.set_parent(Some(self.entity.clone()));
+            self.weapon.update(world);
             return;
         }
         
@@ -149,49 +196,8 @@ impl GameObject for Player
         }
 
 
-        // Thruster Particle Adjustment
-        let draw_scale = self.entity.transform.get_fullsize();
-        let mut spawn_position = vec2(
-            self.entity.transform.rect.x + (self.entity.transform.get_fullsize().x * 0.1), 
-            self.entity.transform.rect.y + (self.entity.transform.get_fullsize().y * 0.4), 
-        );
-
-
-        
-
-
-        if is_key_down(KeyCode::S) {
-            spawn_position = vec2( self.entity.transform.rect.x + (draw_scale.x * 0.2), self.entity.transform.rect.y - (draw_scale.y * 0.2));
-            if self.ship_angle < 25.0
-            {
-                self.ship_angle += 350.0 * get_frame_time();
-            }
-        } else if is_key_down(KeyCode::W) {
-            spawn_position = vec2( self.entity.transform.rect.x + (draw_scale.x * 0.2),self.entity.transform.rect.y + (draw_scale.y * 0.8));
-            if self.ship_angle > -25.0
-            {
-                self.ship_angle -= 350.0 * get_frame_time();
-            }
-        }else {
-            if self.ship_angle < 0.0
-            {
-                self.ship_angle += 350.0 * get_frame_time();
-            }
-            if self.ship_angle > 0.0
-            {
-                self.ship_angle -= 350.0 * get_frame_time();
-            }
-        }
-
-
-        self.entity.transform.rotation = f32::to_radians(self.ship_angle);
-        world.particlesystem_pool.spawn_system_at_position(
-            self.entity.transform.position, 
-            2, 
-            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!(255, 0, 255, 0), vec2(-3.0, 3.0))
-        );
-        
-
+        self.update_ship_visuals(world);
+       
         // WEAPON
         self.weapon.set_parent(Some(self.entity.clone()));
         self.weapon.update(world);

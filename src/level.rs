@@ -13,7 +13,7 @@ impl Level
 {
     pub fn new(world: &mut World, loaded: LoadedLevelData) -> Self
     {
-        println!("loaded data: {:?}", loaded.level_end);
+        //println!("loaded data: {:?}", loaded.level_end);
         let mut leveldata = LevelData::new(60.0);
         leveldata.load_level_end(loaded.level_end, world);
         leveldata.load_walls(loaded.walls, world);
@@ -205,7 +205,7 @@ impl LevelData
                 pos_y = level_end[0].y;
                 println!("{}", pos_y);
             } 
-            println!("Checked Tile: {} / {}", i, level_end.len());
+            //println!("Checked Tile: {} / {}", i, level_end.len());
         }
         end_element.entity.transform.set_size( vec2(1.0, y_size));
         end_element.entity.transform.set_scale( self.level_scale );
@@ -227,7 +227,7 @@ impl LevelData
             wall.transform.rotation = self.rotate_tile();
             
             self.walls.push(wall);
-            println!("Wall: {} / {}", i, walls.len());
+            //println!("Wall: {} / {}", i, walls.len());
         }
     }
 
@@ -246,7 +246,7 @@ impl LevelData
 
             world.set_entity(&mut wall.entity);
             self.blockingwalls.push(wall);
-            println!("Collider: {} / {}", i, blockingwalls.len());
+            //println!("Collider: {} / {}", i, blockingwalls.len());
         }
     }
 
@@ -265,7 +265,7 @@ impl LevelData
 
             world.set_entity(&mut trap.entity);
             self.trapwalls.push(trap);
-            println!("trap: {} / {}", i, trapwalls.len());
+            //println!("trap: {} / {}", i, trapwalls.len());
         }
     }
 
@@ -283,7 +283,7 @@ impl LevelData
 
             world.set_entity(&mut destructible.entity);
             self.destructibles.push(destructible);
-            println!("destructible: {} / {}", i, destructibles.len());
+            //println!("destructible: {} / {}", i, destructibles.len());
         }
     }
     pub fn load_enemyspawner(&mut self, e_spawner: Vec<(Vec2, usize, usize)>, world: &mut World)
@@ -291,7 +291,7 @@ impl LevelData
         println!("Load Spawners: ");
         for i in 0..e_spawner.len()
         {
-            println!("Spawner   {} / {}  ||| Count: {} | type: {}", i, e_spawner.len(), e_spawner[i].1, e_spawner[i].2);
+            //println!("Spawner   {} / {}  ||| Count: {} | type: {}", i, e_spawner.len(), e_spawner[i].1, e_spawner[i].2);
             let mut spawner_element = EnemySpawnerElement::new(e_spawner[i].1, e_spawner[i].2 ,world);
 
             // Apply Spawner Transform
@@ -317,7 +317,7 @@ impl LevelData
             turret.entity.transform.set_position_not_centered(turrets[i] * self.level_scale);
             world.set_entity(&mut turret.entity);
             self.turrets.push(turret);
-            println!("turrets: {} / {}", i, turrets.len());
+            //println!("turrets: {} / {}", i, turrets.len());
         }
     }
 

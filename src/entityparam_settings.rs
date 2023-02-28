@@ -79,7 +79,7 @@ impl EntitySettings{
         params.armor = 2.0;
         params.damage = 1.0;
         params.firerate = 1.0;
-        params.firespeed = 250.0;
+        params.firespeed = 450.0;
         return params;
     }
     pub fn enemy_heavygunner_settings() -> EntityParams

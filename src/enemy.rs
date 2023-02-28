@@ -130,7 +130,13 @@ impl GameObject for Enemy
         {
             return;
         }
-
+        match &mut self.variant.weapon
+        {
+            Some(weapon) => {
+                weapon.draw();
+            }
+            None => {}
+        }
 
         if self.variant.sprite == Texture2D::empty()
         {
@@ -154,13 +160,7 @@ impl GameObject for Enemy
             16.0, 
             BLACK);
         */
-        match &mut self.variant.weapon
-        {
-            Some(weapon) => {
-                weapon.draw();
-            }
-            None => {}
-        }
+      
     }
 }
 impl Collision for Enemy

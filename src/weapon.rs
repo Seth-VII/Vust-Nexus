@@ -89,7 +89,7 @@ impl GameObject for Weapon
                 }else
                 {
                     self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
-                    self.entity.transform.set_scale(0.5);
+                    self.entity.transform.set_scale(0.3);
                 }
                 self.entity.transform.set_position( vec2( screen_width() * 0.5, screen_height() * 0.5 ));
                 self.params.flip_x = false;
@@ -126,7 +126,7 @@ impl GameObject for Weapon
                 self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0); 
                 
                 
-                self.direction += vec2(LEVEL_SPEED * get_frame_time(), 0.0).normalize() * 0.25;
+                self.direction += vec2(LEVEL_SPEED * get_frame_time(), 0.0).normalize() * 0.60;
                 // Update from parent
                 match &mut self.parent
                 {
@@ -167,6 +167,7 @@ impl GameObject for Weapon
         
     }
     fn draw(&mut self) {
+
         if self.sprite.texture_data == Texture2D::empty()
         {
             draw_rectangle(self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.transform.rect.w, self.entity.transform.rect.h, DARKGRAY);
@@ -179,6 +180,12 @@ impl GameObject for Weapon
             
             self.params.rotation = self.entity.transform.rotation;
             draw_texture_ex(self.sprite.texture_data, self.entity.transform.rect.x, self.entity.transform.rect.y, self.entity.get_rect_color(), self.params.clone());
+        }
+        match self.entity.tag.as_str()
+        {
+            "Player Weapon" => {
+            }
+            _=> {}
         }
     }
 }

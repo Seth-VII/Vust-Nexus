@@ -9,6 +9,7 @@ pub struct Game
     camera: Camera2D,
     render_target: RenderTarget,
 
+
     local_score: i32,
     last_score: i32,
     high_score: i32,
@@ -21,6 +22,7 @@ pub struct Game
     pub available_levels: usize,
     pub level: Option<Level>,
     selected_level: usize,
+    level_transition: BlackBlend,
 
     misslepool: MisslePool,
     enemypool: EnemyPool,
@@ -34,9 +36,10 @@ impl Game {
         self.init_camera();
 
 
-        if self.world.level_completed && self.gamestate != GameState::LevelCompleted {
-            self.gamestate = GameState::LevelCompleted;
-            self.world.level_offset = 0.0;
+        if self.world.level_completed {
+            self.gamestate = GameState::Transition;
+            self.level_transition.blend_in();
+            self.level_transition.update_blend(self.world.level_offset);
             println!("Level Completed!");
         }
 
@@ -49,12 +52,26 @@ impl Game {
         //println!("{:?}", self.gamestate);
         match self.gamestate
         {
+            GameState::Transition => {
+
+                if self.level_transition.get_is_playing(){
+                    self.update();
+                    self.late_update();
+                    self.draw();
+                    self.level_transition.update_blend(self.world.level_offset);
+                }else{
+                    self.end_level();
+                    self.next_level();
+                    self.level_transition.set_start_blend(BlendingType::BlendOut, 1.0);
+                }
+            }
             GameState::MainMenu => {
-                if is_key_released(KeyCode::Space)
+                if is_key_released(KeyCode::Space) || is_mouse_button_released(MouseButton::Left)
                 {
                     self.gamestate = GameState::GameRunning;
+                    self.level_transition.set_start_blend(BlendingType::BlendOut, 1.0);
                 }
-                let text = "Press Space to Start!";
+                let text = "Press [Space or Left Mousebutton] to Start!";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
                 let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
@@ -105,20 +122,25 @@ impl Game {
                 {
                     self.late_tick -= get_frame_time();
                 }
-
+                
                 if self.player.entity.entity_params.health <= 0.0
                 {
+
+                    
                     self.gamestate = GameState::GameOver;
                     self.world.level_offset = 0.0;
-
+                    
                     let mut params = PlaySoundParams::default();
                     params.volume = 0.5;
                     play_sound(self.world.assets.get_asset_by_name("explosion_1".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
-
+                    
+                    
                 }
-
                 self.draw();
+                
                 self.update_score();
+                    
+                
             }
             GameState::GameOver => {
 
@@ -126,11 +148,7 @@ impl Game {
                 {
                     self.high_score = self.local_score;
                 }
-                self.world.level_completed = false;
-                self.world.level_offset = 0.0;
-                let level_position = vec2( GAME_SIZE_X * 0.5, GAME_SIZE_Y * 0.5);
-                self.camera.target = level_position;
-                set_camera(&self.camera);
+                self.end_level();
 
                 let text = "GAME OVER";
                 let text_size =  60.0;
@@ -159,19 +177,16 @@ impl Game {
                 let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
                 draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 100.0, text_size, WHITE);
 
-                if is_key_pressed(KeyCode::Space)
+                if is_key_pressed(KeyCode::Space) || is_mouse_button_released(MouseButton::Left)
                 {
                     self.last_score = self.local_score;
                     self.restart();
+                    self.level_transition.set_start_blend(BlendingType::BlendOut, 1.0);
                     return;
                 }
             }
             GameState::LevelCompleted => {
-                self.world.level_completed = false;
-                self.world.level_offset = 0.0;
-                let level_position = vec2( GAME_SIZE_X * 0.5, GAME_SIZE_Y * 0.5);
-                self.camera.target = level_position;
-                set_camera(&self.camera);
+                self.end_level();
 
                 // Win Screen
                 let text = format!("Level Completed");
@@ -202,8 +217,16 @@ impl Game {
                 }
             }
         }
-
+        self.level_transition.update_blend(self.world.level_offset);
         self.draw_camera_to_screen();
+    }
+    pub fn end_level(&mut self)
+    {
+        self.world.level_completed = false;
+        self.world.level_offset = 0.0;
+        let level_position = vec2( GAME_SIZE_X * 0.5, GAME_SIZE_Y * 0.5);
+        self.camera.target = level_position;
+        set_camera(&self.camera);
     }
 
     pub fn init_camera(&mut self)
@@ -317,6 +340,7 @@ impl Game {
             level_loader: loader,
             level: None,
             selected_level: 0,
+            level_transition: BlackBlend::default(),
 
             misslepool: misslepool,
             enemypool: enemypool,
@@ -388,29 +412,30 @@ impl Game {
 
     pub fn next_level(&mut self) {
         self.world.reload();
-        println!("selected {} / available {}", self.selected_level, self.available_levels);
         if self.selected_level < self.available_levels -1
         {
             self.selected_level += 1;
             self.load_level();
+            println!("selected {} / available {}", self.selected_level, self.available_levels);
         }
 
-        println!("Count: {}", self.world.entities.len());
         self.misslepool = MisslePool::new();
         self.misslepool.create_pool(512, &mut self.world);
-
+        
         self.enemypool = EnemyPool::new();
         self.enemypool.create_pool(128, &mut self.world);
-
+        
         self.player = Player::new(&mut self.world);
         self.player.init(&mut self.world);
+
         self.gamestate = GameState::GameRunning;
+        println!("Count: {}", self.world.entities.len());
     }
 
     
     pub fn load_level(&mut self)
     {
-        println!("Loader Data: {}", self.level_loader.levels[self.selected_level].enemy_spawner.len() );
+        //println!("Loader Data: {}", self.level_loader.levels[self.selected_level].enemy_spawner.len() );
         let mut level = Level::new(&mut self.world, self.level_loader.levels[self.selected_level].clone());
         level.init(&mut self.world);
         self.level = Some(level.clone());

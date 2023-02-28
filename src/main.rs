@@ -10,7 +10,7 @@ pub const COLLISION_COLOR: Color = WHITE;
 
 pub const SELECTED_LEVEL: usize = 0;
 
-pub const LEVEL_SPEED: f32 = 250.0;
+pub const LEVEL_SPEED: f32 = 350.0;
 
 // Engine
 //------------------
@@ -47,6 +47,8 @@ mod level;
 pub use level::*;
 mod levelloader;
 pub use levelloader::*;
+mod level_blending;
+pub use level_blending::*;
 // Game
 //------------------
 mod game;
@@ -100,17 +102,18 @@ fn window_conf() -> Conf
 #[macroquad::main(window_conf)]
 async fn main() {
 
-
     let mut game = Game::init().await;
-
-    loop {
     
+    loop {
+        show_mouse(false);
+        simulate_mouse_with_touch(true);
+
         game.Run();
         
 
         draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, WHITE);
         draw_rectangle_lines(0.0, 0.0, screen_width(), screen_height(), 2.0, WHITE);
-
+        draw_circle_lines(mouse_position().0, mouse_position().1, 5.0, 1.0, WHITE);
 
         next_frame().await;
     }

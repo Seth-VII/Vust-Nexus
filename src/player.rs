@@ -76,7 +76,7 @@ impl GameObject for Player
             //self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
             self.entity.transform.set_scale( 2.0);
         }
-        self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X as f32 * 0.5,self.entity.transform.position.y + GAME_SIZE_Y as f32 * 0.5 ));
+        self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X * 0.5,self.entity.transform.position.y + GAME_SIZE_Y * 0.5 ));
         self.entity.set_rect_color(WHITE);
     }
     fn update(&mut self, world: &mut World) {

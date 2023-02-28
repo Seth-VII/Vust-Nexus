@@ -76,9 +76,9 @@ impl GameObject for Weapon
                 }else
                 {
                     self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
-                    self.entity.transform.set_scale(0.2);
+                    self.entity.transform.set_scale(0.35);
                 }
-                self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
+                self.entity.transform.set_position( vec2( screen_width() * 0.5, screen_height() * 0.5 ));
                 self.params.flip_x = false;
                 self.entity.entity_params.firespeed = 100.0;
             }
@@ -91,7 +91,7 @@ impl GameObject for Weapon
                     self.entity.transform.set_size(self.sprite.get_sheet_tile_size());
                     self.entity.transform.set_scale(0.5);
                 }
-                self.entity.transform.set_position( vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5 ));
+                self.entity.transform.set_position( vec2( screen_width() * 0.5, screen_height() * 0.5 ));
                 self.params.flip_x = false;
                 self.entity.entity_params.firespeed = 100.0;
             }
@@ -103,28 +103,37 @@ impl GameObject for Weapon
         match self.entity.tag.as_str()
         {
             "Player Weapon" => {
-                let relative_mouseposition = vec2(mouse_position().0, mouse_position().1);
+
+
+                // Scalefactor -> Adjust relative mouseposition to screen scale
+                let scale_factor = vec2( GAME_SIZE_X  as f32, GAME_SIZE_Y  as f32)/vec2(screen_width(), screen_height());
+                let relative_mouseposition = vec2(mouse_position().0 * scale_factor.x, mouse_position().1 * scale_factor.y);
+
                 let mouseposition_worldoffset = vec2( relative_mouseposition.x + world.level_offset, relative_mouseposition.y);
                 //println!("{}", mouseposition_worldoffset);
+
+    
 
                 let dir_unnormalized = vec2(self.entity.transform.position.x - mouseposition_worldoffset.x, self.entity.transform.position.y - mouseposition_worldoffset.y);
                 self.direction = dir_unnormalized.normalize() * -1.0;
                 //self.direction = vec2(1.0,0.0) ;
                 
-                self.missle_spawn_offset = vec2(-15.0,0.0) + 50.0 * self.direction;
+                // ------------------------- Relative Pos  + Offset * Direction
+                self.missle_spawn_offset = vec2(-15.0,0.0) + 30.0 * self.direction;
                 //self.missle_spawn_offset = vec2(25.0,0.0) ;
                 
                 let rotation = f32::atan2(dir_unnormalized.x, dir_unnormalized.y) *-1.0;
                 self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0); 
                 
-                self.params.pivot = Some( vec2( self.entity.transform.position.x - (self.entity.transform.get_fullsize().x * 0.5) + 15.0, self.entity.transform.position.y));
                 
-                self.direction += vec2(LEVEL_SPEED * get_frame_time(),0.0).normalize() * 0.25;
+                self.direction += vec2(LEVEL_SPEED * get_frame_time(), 0.0).normalize() * 0.25;
                 // Update from parent
                 match &mut self.parent
                 {
                     Some(parent) => {
-                        self.entity.transform.set_position(parent.transform.position + vec2(parent.transform.get_fullsize().x * 0.5, 0.0)  - vec2( 15.0, 2.0));
+                        //self.entity.transform.set_position(parent.transform.position + vec2(parent.transform.get_fullsize().x * 0.5, 0.0)  - vec2( 15.0, 2.0));
+                        self.entity.transform.set_position(parent.transform.position + vec2(14.0, 15.0));
+                        self.params.pivot = Some( parent.transform.position + vec2(-5.0, 15.0));
                     }
                     None => {}
                 }

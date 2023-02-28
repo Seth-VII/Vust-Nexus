@@ -39,7 +39,7 @@ impl ParticleSystemPool
         {
             ps.update_particles(world);
         }
-        println!("PS_Pool Len: {}", self.pool.len());
+        //println!("PS_Pool Len: {}", self.pool.len());
     }
     pub fn draw(&mut self)
     {
@@ -413,9 +413,9 @@ impl Particle {
     }
     pub fn check_screen_visibility(&mut self) -> bool
     {
-        if  self.transform.get_centered_position().x > GAME_SIZE_X as f32  ||
+        if  self.transform.get_centered_position().x > GAME_SIZE_X  ||
             self.transform.get_centered_position().x < 0.0 - self.transform.size.x ||
-            self.transform.get_centered_position().y > GAME_SIZE_Y as f32  ||
+            self.transform.get_centered_position().y > GAME_SIZE_Y  ||
             self.transform.get_centered_position().y < 0.0 - self.transform.size.y
         {
             return false;

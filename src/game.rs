@@ -7,13 +7,14 @@ pub struct Game
     fixed_tick: f32,
 
     camera: Camera2D,
+    render_target: RenderTarget,
 
     local_score: i32,
     last_score: i32,
     high_score: i32,
 
     gamestate: GameState,
-    viewspace: Viewspace,
+    //viewspace: Viewspace,
     pub world: World,
 
     pub level_loader: LevelLoader,
@@ -30,6 +31,8 @@ impl Game {
 
     pub fn Run(&mut self)
     {
+        self.init_camera();
+
 
         if self.world.level_completed && self.gamestate != GameState::LevelCompleted {
             self.gamestate = GameState::LevelCompleted;
@@ -42,7 +45,7 @@ impl Game {
             self.load_level();
         }
 
-        draw_text(format!("HP: {}",self.player.entity.entity_params.health).as_str(), 30.0 + self.world.level_offset, 90.0, 30.0, WHITE);
+        draw_text(format!("HP: {}",self.player.entity.entity_params.health).as_str(), 30.0 , 90.0, 30.0, WHITE);
         //println!("{:?}", self.gamestate);
         match self.gamestate
         {
@@ -54,8 +57,8 @@ impl Game {
                 let text = "Press Space to Start!";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text, centered_position, GAME_SIZE_Y as f32 * 0.5, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text, centered_position, GAME_SIZE_Y * 0.5, text_size, WHITE);
 
 
                 
@@ -71,8 +74,8 @@ impl Game {
                 let text = "Paused! Press TAB again!";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text, centered_position, GAME_SIZE_Y as f32 * 0.5, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text, centered_position, GAME_SIZE_Y * 0.5, text_size, WHITE);
             }
             GameState::GameRunning => {
                 
@@ -125,36 +128,36 @@ impl Game {
                 }
                 self.world.level_completed = false;
                 self.world.level_offset = 0.0;
-                let level_position = vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5);
+                let level_position = vec2( GAME_SIZE_X * 0.5, GAME_SIZE_Y * 0.5);
                 self.camera.target = level_position;
                 set_camera(&self.camera);
 
                 let text = "GAME OVER";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text, centered_position, GAME_SIZE_Y as f32 * 0.5 - 80.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text, centered_position, GAME_SIZE_Y * 0.5 - 80.0, text_size, WHITE);
 
                 // Local Score
                 let text = format!("Score: {}", self.local_score);
                 let text_size =  40.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 0.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 0.0, text_size, WHITE);
 
                 // Last Score
                 let text = format!("Last Score: {}", self.last_score);
                 let text_size =  25.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 30.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 30.0, text_size, WHITE);
                 
                 // High Score
                 let text = format!("High Score: {}", self.high_score);
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 100.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 100.0, text_size, WHITE);
 
                 if is_key_pressed(KeyCode::Space)
                 {
@@ -166,7 +169,7 @@ impl Game {
             GameState::LevelCompleted => {
                 self.world.level_completed = false;
                 self.world.level_offset = 0.0;
-                let level_position = vec2( GAME_SIZE_X as f32 * 0.5, GAME_SIZE_Y as f32 * 0.5);
+                let level_position = vec2( GAME_SIZE_X * 0.5, GAME_SIZE_Y * 0.5);
                 self.camera.target = level_position;
                 set_camera(&self.camera);
 
@@ -174,22 +177,22 @@ impl Game {
                 let text = format!("Level Completed");
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 - 100.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 - 100.0, text_size, WHITE);
 
                 // Local Score
                 let text = format!("Current Score: {}", self.local_score);
                 let text_size =  40.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 30.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 30.0, text_size, WHITE);
 
                 // Current Level
                 let text = format!("Level {} / {}", self.selected_level, 10);
                 let text_size =  40.0;
                 let text_width = text.chars().count() as f32 * text_size;
-                let centered_position = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2);
-                draw_text(text.as_str(), centered_position, GAME_SIZE_Y as f32 * 0.5 + 0.0, text_size, WHITE);
+                let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
+                draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 0.0, text_size, WHITE);
 
 
                 if is_key_pressed(KeyCode::Space)
@@ -199,6 +202,50 @@ impl Game {
                 }
             }
         }
+
+        self.draw_camera_to_screen();
+    }
+
+    pub fn init_camera(&mut self)
+    {
+        let camera_rect = Rect::new(0.0,0.0, GAME_SIZE_X , GAME_SIZE_Y );
+        let mut camera =Camera2D::from_display_rect(camera_rect);
+        camera.render_target = Some(self.render_target);
+        set_camera(&camera);
+        clear_background(BLACK);
+        //Draw Background
+        draw_rectangle( 0.0, 0.0,  GAME_SIZE_X as f32 ,  GAME_SIZE_Y as f32 , BLACK);
+    }
+
+    pub fn draw_camera_to_screen(&mut self)
+    {
+        // Set Default Camera
+        set_default_camera();
+        // calculate game view size based on window size
+        let game_diff_w = GAME_SIZE_X / GAME_SIZE_X as f32;
+        let game_diff_h = GAME_SIZE_Y / GAME_SIZE_Y as f32;
+        let aspect_diff = game_diff_w.min(game_diff_h);
+        
+        let scaled_game_size_w = screen_width() as f32 * aspect_diff;
+        let scaled_game_size_h = screen_height() as f32 * aspect_diff;
+        
+        let width_padding = (screen_width() - scaled_game_size_w) * 0.5f32;
+        let height_padding = (screen_height() - scaled_game_size_h) * 0.5f32;
+        
+        // draw game
+        clear_background(BLACK);
+        draw_texture_ex(
+            self.render_target.texture,
+            width_padding,
+            height_padding,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(Vec2::new(scaled_game_size_w, scaled_game_size_h)),
+                flip_y: true,
+                ..Default::default()
+            },
+        );
+
     }
 
     pub fn restart(&mut self)
@@ -211,31 +258,30 @@ impl Game {
         
         self.enemypool = EnemyPool::new();
         self.enemypool.create_pool(128, &mut self.world);
-        //self.enemy_spawner = EnemySpawner::new();
-        //self.enemy_spawner.create_pool(32, &mut self.world);
-        //self.enemy_spawner.init(&mut self.world);
 
         self.player = Player::new(&mut self.world);
         self.player.init(&mut self.world);
 
-        //self.world.reset_scorepoints();
         self.local_score = 0;
         self.gamestate = GameState::GameRunning;
     }
     pub async fn init() -> Self
     {
+        let game_render_target = render_target(GAME_SIZE_X as u32, GAME_SIZE_Y as u32);
+        game_render_target.texture.set_filter(FilterMode::Linear);
+        request_new_screen_size(GAME_SIZE_X , GAME_SIZE_Y);
+        next_frame().await;
+        let camera_rect = Rect::new(0.0,0.0, GAME_SIZE_X , GAME_SIZE_Y );
+        let mut camera =Camera2D::from_display_rect(camera_rect);
+        camera.render_target = Some(game_render_target);
+        set_camera(&camera);
+
+
         let mut world = World::new().await;
         //world.load_level();
 
         let mut loader = LevelLoader::new();
         loader.level_loader_init().await;
-
-        println!("Count: {}", world.entities.len());
-        let viewspace = Viewspace::new();
-
-        let camera_rect = Rect::new(0.0,0.0, GAME_SIZE_X as f32 , GAME_SIZE_Y as f32 );
-        let camera = Camera2D::from_display_rect(camera_rect);
-        set_camera(&camera);
 
 
         let mut misslepool = MisslePool::new();
@@ -247,9 +293,6 @@ impl Game {
 
 
         let mut player = Player::new(&mut world);
-        
-        //enemy_spawner.create_pool(32, &mut world);
-        //enemy_spawner.init(&mut world);
         player.init(&mut world);
 
 
@@ -263,8 +306,11 @@ impl Game {
             high_score: 0,
 
             gamestate: GameState::MainMenu,
-            viewspace: viewspace,
+
+            //viewspace: viewspace,
             camera: camera,
+            render_target: game_render_target,
+
             world: world,
 
             available_levels: loader.levels.len(),
@@ -282,11 +328,10 @@ impl Game {
     pub fn update(&mut self)
     {
         self.world.update_actives();
-        self.viewspace.set_position(self.player.entity.transform.position);
+        //self.viewspace.set_position(self.player.entity.transform.position);
         
-        let level_position = vec2( GAME_SIZE_X as f32 * 0.5 + self.world.level_offset , GAME_SIZE_Y as f32 * 0.5);
+        let level_position = vec2( GAME_SIZE_X * 0.5 + self.world.level_offset , GAME_SIZE_Y * 0.5);
         self.camera.target = level_position;
-
         set_camera(&self.camera);
         self.level_update();
 
@@ -320,7 +365,7 @@ impl Game {
 
         self.world.particlesystem_pool.draw();
                         
-        self.viewspace.draw();
+       // self.viewspace.draw();
         //self.enemy_spawner.draw();
         
         self.player.draw();
@@ -330,8 +375,8 @@ impl Game {
         let text = format!("Local Score: {}", self.local_score);
         let text_size =  50.0;
         let text_width = text.chars().count() as f32 * text_size;
-        let centered_position_x = ( GAME_SIZE_X as f32 * 0.5) - ( text_width * 0.2) + self.world.level_offset;
-        //draw_rectangle(0.0 + self.world.level_offset, 0.0, GAME_SIZE_X as f32 + self.world.level_offset, 80.0, BLACK);
+        let centered_position_x = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2) + self.world.level_offset;
+        //draw_rectangle(0.0 + self.world.level_offset, 0.0, GAME_SIZE_X + self.world.level_offset, 80.0, BLACK);
 
         draw_text(text.as_str(),centered_position_x, 60.0, text_size, WHITE);
     }

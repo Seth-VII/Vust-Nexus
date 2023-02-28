@@ -14,7 +14,7 @@ impl Level
     pub fn new(world: &mut World, loaded: LoadedLevelData) -> Self
     {
         println!("loaded data: {:?}", loaded.level_end);
-        let mut leveldata = LevelData::new(50.0);
+        let mut leveldata = LevelData::new(60.0);
         leveldata.load_level_end(loaded.level_end, world);
         leveldata.load_walls(loaded.walls, world);
         leveldata.load_blocking_walls(loaded.blockingWalls, world);

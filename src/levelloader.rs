@@ -119,7 +119,7 @@ impl LevelLoader
                                 level_data.enemy_spawner[found_spawner] .1 = (spawnmap.get_pixel(x as u32, y as u32).g * 255.0) as usize;
                                 // 2 = Type of Enemies
                                 level_data.enemy_spawner[found_spawner] .2 = (spawnmap.get_pixel(x as u32, y as u32).b * 255.0) as usize;
-                                println!("Spawner Count: {}", level_data.enemy_spawner[found_spawner] .1);
+                                //println!("Spawner Count: {}", level_data.enemy_spawner[found_spawner] .1);
                                 found_spawner += 1;
                             }
                         }

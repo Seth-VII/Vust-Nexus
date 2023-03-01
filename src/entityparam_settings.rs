@@ -10,7 +10,7 @@ impl EntitySettings{
         params.armor = 3.0;
         params.speed = 250.0;
         params.damage = 3.0;
-        params.firerate = 30.0;
+        params.firerate = 60.0;
         params.firespeed = 1000.0;
         return params;
     }

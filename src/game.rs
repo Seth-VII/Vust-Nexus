@@ -33,9 +33,10 @@ impl Game {
 
     pub fn Run(&mut self)
     {
+        // Setup Camera
         self.init_camera();
 
-
+        // Is Level Finished
         if self.world.level_completed {
             self.gamestate = GameState::Transition;
             self.level_transition.blend_in();
@@ -43,23 +44,28 @@ impl Game {
             println!("Level Completed!");
         }
 
+        // Safety Check for Level
         if self.level.is_none()
         {
             self.load_level();
         }
 
+        // Draw Health Points
         draw_text(format!("HP: {}",self.player.entity.entity_params.health).as_str(), 30.0 , 90.0, 30.0, WHITE);
-        //println!("{:?}", self.gamestate);
+
         match self.gamestate
         {
             GameState::Transition => {
 
+
                 if self.level_transition.get_is_playing(){
+                    // While In Blend
                     self.update();
                     self.late_update();
                     self.draw();
                     self.level_transition.update_blend(self.world.level_offset);
                 }else{
+                    // On Blend Finished
                     self.end_level();
                     self.next_level();
                     self.level_transition.set_start_blend(BlendingType::BlendOut, 1.0);
@@ -71,6 +77,7 @@ impl Game {
                     self.gamestate = GameState::GameRunning;
                     self.level_transition.set_start_blend(BlendingType::BlendOut, 1.0);
                 }
+                // UI
                 let text = "Press [Space or Left Mousebutton] to Start!";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
@@ -82,28 +89,36 @@ impl Game {
 
             }
             GameState::GamePaused => {
-                if is_key_released(KeyCode::Tab)
+                if is_key_released(KeyCode::Tab) 
                 {
                     self.gamestate = GameState::GameRunning;
                 }
+                // Camera Position
+                let level_position = vec2( GAME_SIZE_X * 0.5 + self.world.level_offset , GAME_SIZE_Y * 0.5);
+                self.camera.target = level_position;
+                set_camera(&self.camera);
+                // Draw Game
                 self.draw();
 
+                // Pause UI
+                draw_rectangle(self.world.level_offset, 0.0 , GAME_SIZE_X, GAME_SIZE_Y, color_u8!(0,0,0,220));
                 let text = "Paused! Press TAB again!";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
                 let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
-                draw_text(text, centered_position, GAME_SIZE_Y * 0.5, text_size, WHITE);
+                draw_text(text, centered_position + self.world.level_offset, GAME_SIZE_Y * 0.5, text_size, WHITE);
             }
             GameState::GameRunning => {
-                
+                // Pause Game
                 if is_key_released(KeyCode::Tab)
                 {
                     self.gamestate = GameState::GamePaused;
                 }
 
+                // Update Game -> Every possible Frame
                 self.update();
                 
-                // Fixed Update -> for heavy stuff but needs more updates
+                // Fixed Update -> Mostly used for the Particle Updates
                 if self.fixed_tick <= 0.0
                 {
                     self.fixed_update();
@@ -113,7 +128,7 @@ impl Game {
                     self.fixed_tick -= get_frame_time();
                 }
 
-                // Later Update -> for heavy stuff
+                // Later Update -> for heavy stuff (Collision)
                 if self.late_tick <= 0.0
                 {
                     self.late_update();
@@ -123,10 +138,9 @@ impl Game {
                     self.late_tick -= get_frame_time();
                 }
                 
+                // Check for Players health
                 if self.player.entity.entity_params.health <= 0.0
                 {
-
-                    
                     self.gamestate = GameState::GameOver;
                     self.world.level_offset = 0.0;
                     
@@ -136,20 +150,26 @@ impl Game {
                     
                     
                 }
+
+                // Draw Game
                 self.draw();
-                
-                self.update_score();
-                    
+
+                // Update Scorepoints
+                self.update_score();   
                 
             }
             GameState::GameOver => {
-
+                
+                // Update Highscore
                 if self.local_score > self.high_score
                 {
                     self.high_score = self.local_score;
                 }
+                // Reset Level
                 self.end_level();
 
+                // ---------------GameOver UI
+                // GameOver Text
                 let text = "GAME OVER";
                 let text_size =  60.0;
                 let text_width = text.chars().count() as f32 * text_size;
@@ -177,6 +197,7 @@ impl Game {
                 let centered_position = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2);
                 draw_text(text.as_str(), centered_position, GAME_SIZE_Y * 0.5 + 100.0, text_size, WHITE);
 
+                // Restart Game
                 if is_key_pressed(KeyCode::Space) || is_mouse_button_released(MouseButton::Left)
                 {
                     self.last_score = self.local_score;
@@ -217,7 +238,11 @@ impl Game {
                 }
             }
         }
+
+        // Update Level Blending
         self.level_transition.update_blend(self.world.level_offset);
+
+        // Update Camera Space  ->  Especially used for Resizing the Game Window
         self.draw_camera_to_screen();
     }
     pub fn end_level(&mut self)
@@ -231,12 +256,14 @@ impl Game {
 
     pub fn init_camera(&mut self)
     {
+        // Setup Camera
         let camera_rect = Rect::new(0.0,0.0, GAME_SIZE_X , GAME_SIZE_Y );
         let mut camera =Camera2D::from_display_rect(camera_rect);
         camera.render_target = Some(self.render_target);
         set_camera(&camera);
+
+        //Draw & Clear Background
         clear_background(BLACK);
-        //Draw Background
         draw_rectangle( 0.0, 0.0,  GAME_SIZE_X as f32 ,  GAME_SIZE_Y as f32 , BLACK);
     }
 
@@ -255,7 +282,7 @@ impl Game {
         let width_padding = (screen_width() - scaled_game_size_w) * 0.5f32;
         let height_padding = (screen_height() - scaled_game_size_h) * 0.5f32;
         
-        // draw game
+        // Draw Game on Screen
         clear_background(BLACK);
         draw_texture_ex(
             self.render_target.texture,
@@ -273,6 +300,7 @@ impl Game {
 
     pub fn restart(&mut self)
     {
+        // Reload everything
         self.world.reload();
         self.selected_level = 0;
         self.load_level();
@@ -291,18 +319,20 @@ impl Game {
     }
     pub async fn init() -> Self
     {
+        // Create Render Target for Game
         let game_render_target = render_target(GAME_SIZE_X as u32, GAME_SIZE_Y as u32);
         game_render_target.texture.set_filter(FilterMode::Linear);
         request_new_screen_size(GAME_SIZE_X , GAME_SIZE_Y);
         next_frame().await;
+        // Create & Set Camera
         let camera_rect = Rect::new(0.0,0.0, GAME_SIZE_X , GAME_SIZE_Y );
         let mut camera =Camera2D::from_display_rect(camera_rect);
         camera.render_target = Some(game_render_target);
         set_camera(&camera);
 
 
+        // Create Game Systems
         let mut world = World::new().await;
-        //world.load_level();
 
         let mut loader = LevelLoader::new();
         loader.level_loader_init().await;
@@ -319,8 +349,8 @@ impl Game {
         let mut player = Player::new(&mut world);
         player.init(&mut world);
 
-
-
+        
+        // Setup Game Data
         Self {
             late_tick: 0.0,
             fixed_tick: 0.0,
@@ -352,58 +382,63 @@ impl Game {
     }
     pub fn update(&mut self)
     {
+        // Update World Entites
         self.world.update_actives();
-        //self.viewspace.set_position(self.player.entity.transform.position);
         
+        // Update Camera
         let level_position = vec2( GAME_SIZE_X * 0.5 + self.world.level_offset , GAME_SIZE_Y * 0.5);
         self.camera.target = level_position;
         set_camera(&self.camera);
         self.level_update();
 
+        // Update Missles
         self.misslepool.update(&mut self.world);
         
+        // Update Enemies
         self.enemypool.update(&mut self.world);
         self.enemypool.enemy_shoot(&mut self.misslepool, &mut self.world);
-        //self.enemy_spawner.update(&mut self.world);
-        //self.enemy_spawner.enemy_shoot(&mut self.misslepool, &mut self.world);
+
+        // Update Player
         self.player.update(&mut self.world);
         self.player.shoot(&mut self.misslepool, &mut self.world);
 
     }
     pub fn fixed_update(&mut self)
     {
-        self.level_fixed_update();
         self.world.fixed_update();
     }
     pub fn late_update(&mut self)
     {
+        // Update Level
         self.level_late_update();
         
-        //self.enemy_spawner.late_update(&mut self.world);
+        
         self.player.late_update(&mut self.world);
         self.misslepool.late_update(&mut self.world);
         self.enemypool.late_update(&mut self.world);
     }
     pub fn draw(&mut self)
     {
+        // Draw Level
         self.world.level.as_mut().unwrap().draw();
 
+        // Draw Particles
         self.world.particlesystem_pool.draw();
-                        
-       // self.viewspace.draw();
-        //self.enemy_spawner.draw();
-        
+
+        // Draw Entities
         self.player.draw();
         self.misslepool.draw();
         self.enemypool.draw();
         
+        // Draw Score UI
         let text = format!("Local Score: {}", self.local_score);
         let text_size =  50.0;
         let text_width = text.chars().count() as f32 * text_size;
         let centered_position_x = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2) + self.world.level_offset;
-        //draw_rectangle(0.0 + self.world.level_offset, 0.0, GAME_SIZE_X + self.world.level_offset, 80.0, BLACK);
+        let x_padding = GAME_SIZE_X * 0.5 - 250.0; 
+        draw_rectangle(x_padding + self.world.level_offset, 0.0, GAME_SIZE_X - (x_padding*2.0), 60.0, color_u8!(0,0,0,100));
+        draw_text(text.as_str(),centered_position_x, 50.0, text_size, WHITE);
 
-        draw_text(text.as_str(),centered_position_x, 60.0, text_size, WHITE);
     }
 
     pub fn update_score(&mut self)
@@ -456,18 +491,7 @@ impl Game {
             self.world.level =  Some(lvl);
         }
     }
-    pub fn level_fixed_update(&mut self)
-    {
-        //self.level.as_mut().unwrap().late_update(self, misslepool);
-        /*
-        if self.level.is_some() {
-            let mut lvl = self.level.as_mut().unwrap().clone();
-            lvl.spawner_update(&mut self.enemypool, &mut self.world);
-            self.level = Some(lvl.clone());
-            self.world.level =  Some(lvl);
-        }
-        */
-    }
+
     pub fn level_late_update(&mut self)
     {
         //self.level.as_mut().unwrap().late_update(self, misslepool);

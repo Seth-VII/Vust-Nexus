@@ -22,6 +22,7 @@ impl Level
         leveldata.load_destructibles(loaded.destructibles, world);
         leveldata.load_enemyspawner(loaded.enemy_spawner, world);
         leveldata.load_turrets(loaded.turrets, world);
+        println!("Level data state: Success!");
         Self { leveldata: leveldata }
     }
     pub fn has_reached_level_end(&self, progress: f32) -> bool
@@ -192,7 +193,7 @@ impl LevelData
     }
     pub fn load_level_end(&mut self, level_end: Vec<Vec2>, world: &mut World)
     {
-        println!("Load End: ");
+        println!("Load End... ");
         let mut end_element = LevelEndElement::new(world);
         let mut y_size = 0.0;
         let mut pos_y = 0.0; 
@@ -203,9 +204,7 @@ impl LevelData
                 pos_x = level_end[i].x;
                 y_size = (level_end.last().unwrap().y - level_end[0].y) + 1.0; 
                 pos_y = level_end[0].y;
-                println!("{}", pos_y);
             } 
-            //println!("Checked Tile: {} / {}", i, level_end.len());
         }
         end_element.entity.transform.set_size( vec2(1.0, y_size));
         end_element.entity.transform.set_scale( self.level_scale );
@@ -215,7 +214,7 @@ impl LevelData
     }
     pub fn load_walls(&mut self, walls: Vec<Vec2>, world: &mut World)
     {
-        println!("Load Walls: ");
+        println!("Load Walls... ");
         for i in 0..walls.len()
         {
             //println!("LevelData: {}", walls[i]);
@@ -233,7 +232,7 @@ impl LevelData
 
     pub fn load_blocking_walls(&mut self, blockingwalls: Vec<Vec2>, world: &mut World)
     {
-        println!("Load Collider: ");
+        println!("Load Collider... ");
         for i in 0..blockingwalls.len()
         {
             //println!("LevelData: {}", walls[i]);
@@ -252,7 +251,7 @@ impl LevelData
 
     pub fn load_trap_walls(&mut self, trapwalls: Vec<Vec2>, world: &mut World)
     {
-        println!("Load Traps: ");
+        println!("Load Traps... ");
         for i in 0..trapwalls.len()
         {
             //println!("LevelData: {}", walls[i]);
@@ -271,7 +270,7 @@ impl LevelData
 
     pub fn load_destructibles(&mut self, destructibles: Vec<Vec2>, world: &mut World)
     {
-        println!("Load Destructibles: ");
+        println!("Load Destructibles... ");
         for i in 0..destructibles.len()
         {
             let mut destructible = DestructibleElement::new(world);
@@ -288,7 +287,7 @@ impl LevelData
     }
     pub fn load_enemyspawner(&mut self, e_spawner: Vec<(Vec2, usize, usize)>, world: &mut World)
     {
-        println!("Load Spawners: ");
+        println!("Load Spawners... ");
         for i in 0..e_spawner.len()
         {
             //println!("Spawner   {} / {}  ||| Count: {} | type: {}", i, e_spawner.len(), e_spawner[i].1, e_spawner[i].2);
@@ -308,7 +307,7 @@ impl LevelData
     }
     pub fn load_turrets(&mut self, turrets: Vec<Vec2>, world: &mut World)
     {
-        println!("Load turrets: ");
+        println!("Load turrets... ");
         for i in 0..turrets.len()
         {
             let mut turret = TurretElement::new(world);

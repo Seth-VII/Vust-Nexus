@@ -35,8 +35,8 @@ impl EntitySettings{
     pub fn destructible_settings() -> EntityParams
     {
         let mut params = EntityParams::default();
-        params.health = 10.0;
-        params.armor = 5.0;
+        params.health = 6.0;
+        params.armor = 1.0;
         return params;
     }
     pub fn turret_settings() -> EntityParams
@@ -65,10 +65,12 @@ impl EntitySettings{
     pub fn enemy_tank_settings() -> EntityParams
     {
         let mut params = EntityParams::default();
-        params.health = 10.0;
+        params.health = 20.0;
         params.speed = 170.0;
         params.armor = 5.0;
         params.damage = 3.0;
+        params.firerate = 1.0;
+        params.firespeed = 450.0;
         return params;
     }
     pub fn enemy_gunner_settings() -> EntityParams
@@ -78,7 +80,7 @@ impl EntitySettings{
         params.speed = 200.0;
         params.armor = 2.0;
         params.damage = 1.0;
-        params.firerate = 1.0;
+        params.firerate = 2.0;
         params.firespeed = 450.0;
         return params;
     }

@@ -1,4 +1,3 @@
-use macroquad::rand::{gen_range, RandomRange};
 use super::*;
 
 
@@ -16,12 +15,12 @@ impl EnemySpawner
 {
     pub fn create_spawner( count: usize, spawner_type: usize, world: &mut World) -> Self
     {
-        let mut entity = Entity::new("EnemySpawner", "Spawner", world);
+        let entity = Entity::new("EnemySpawner", "Spawner", world);
 
         let enemy_type = match spawner_type {
             0 => { EnemyType::Default},
-            1 => { EnemyType::Tank},
-            2 => { EnemyType::Gunner},
+            1 => { EnemyType::Gunner},
+            2 => { EnemyType::Tank},
             3 => { EnemyType::HeavyGunner},
             4 => { EnemyType::Exploder},
             5 => { EnemyType::Boss},
@@ -33,7 +32,7 @@ impl EnemySpawner
             spawner_type: enemy_type,
             spawn_count: count,
             spawned: 0,
-            spawn_duration: 2.0,
+            spawn_duration: 3.5,
             time: 0.2,
         }
     }

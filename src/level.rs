@@ -14,9 +14,9 @@ impl Level
     pub fn new(world: &mut World, loaded: LoadedLevelData) -> Self
     {
         //println!("loaded data: {:?}", loaded.level_end);
-        let mut leveldata = LevelData::new(60.0);
+        let mut leveldata = LevelData::new(45.0);
+        leveldata.load_wall_fillings(&loaded, world);
         leveldata.load_level_end(loaded.level_end, world);
-        leveldata.load_walls(loaded.walls, world);
         leveldata.load_blocking_walls(loaded.blockingWalls, world);
         leveldata.load_trap_walls(loaded.trapWalls, world);
         leveldata.load_destructibles(loaded.destructibles, world);
@@ -34,10 +34,11 @@ impl Level
         let mut visibles = Vec::new();
 
         // Add Blocking Walls 
-        let elements = self.leveldata.blockingwalls.clone();
+        let mut elements = self.leveldata.blockingwalls.clone();
+        elements.retain(|e| e.in_view == true);
         for element in elements.iter()
         {
-            if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
+            if inside_windowview(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x)
             {
                 visibles.push(element.entity.transform.rect.clone());
             }
@@ -54,7 +55,8 @@ impl Level
         }
         */
         // Add Destructibles
-        let elements = self.leveldata.destructibles.clone();
+        let mut elements = self.leveldata.destructibles.clone();
+        elements.retain(|e| e.in_view == true);
         for element in elements.iter()
         {
             if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
@@ -63,7 +65,8 @@ impl Level
             }
         }
         // Add Turrets 
-        let elements = self.leveldata.turrets.clone();
+        let mut elements = self.leveldata.turrets.clone();
+        elements.retain(|e| e.in_view == true);
         for element in elements.iter()
         {
             if inside_windowborder(element.entity.transform.rect, level_offset + element.entity.transform.get_fullsize().x, element.entity.transform.get_fullsize().y)
@@ -108,6 +111,10 @@ impl Level
 
     pub fn late_update(&mut self, world: &mut World, misslepool: &mut MisslePool)
     {
+        for wall_element in self.leveldata.walls.iter_mut()
+        {
+            wall_element.late_update(world);
+        }
         for blocking_wall_element in self.leveldata.blockingwalls.iter_mut()
         {
             blocking_wall_element.late_update(world);
@@ -212,16 +219,26 @@ impl LevelData
         world.set_entity(&mut end_element.entity);
         self.end_of_level = Some(end_element);
     }
-    pub fn load_walls(&mut self, walls: Vec<Vec2>, world: &mut World)
+    pub fn load_wall_fillings(&mut self, loader_data: &LoadedLevelData, world: &mut World)
     {
         println!("Load Walls... ");
-        for i in 0..walls.len()
+        //println!("Load Infected {}", (loader_data.walls.len()  + loader_data.infected_wall_filling.len()));
+        for i in 0..(loader_data.walls.len()  + loader_data.infected_wall_filling.len())
         {
             //println!("LevelData: {}", walls[i]);
             let mut wall = WallElement::new(world);
             wall.transform.set_size( vec2(1.0, 1.0));
             wall.transform.set_scale( self.level_scale );
-            wall.transform.set_position_not_centered(walls[i] * self.level_scale);
+            
+            if i < loader_data.walls.len()
+            {
+                wall.transform.set_position_not_centered(loader_data.walls[i] * self.level_scale);
+                wall.set_sprite( vec2(0.0, 0.0));
+            } else 
+            {
+                wall.transform.set_position_not_centered(loader_data.infected_wall_filling[i - loader_data.walls.len()] * self.level_scale);
+                wall.set_sprite( vec2(32.0, 0.0));
+            }
 
             wall.transform.rotation = self.rotate_tile();
             
@@ -397,6 +414,8 @@ pub struct WallElement
 {
     pub transform: Transform,
     pub sprite: TextureAsset,
+    tilesheet_offset: Vec2,
+    in_view: bool,
 }
 impl WallElement
 {
@@ -406,12 +425,25 @@ impl WallElement
         Self { 
             //entity: entity,
             transform: Transform::default(), 
-            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset(),
+            tilesheet_offset: vec2(0.0, 0.0),
+            in_view: false,
         } 
+    }
+
+    pub fn late_update(&mut self, world: &mut World)
+    {
+        self.in_view = inside_windowview(self.transform.rect, world.level_offset);
+    }
+
+    pub fn set_sprite(&mut self, tilesheet_offset: Vec2)
+    {
+        self.tilesheet_offset = tilesheet_offset;
     }
 
     pub fn draw(&self)
     {
+        
         if SHOW_COLLISION 
         {
             draw_rectangle_lines(
@@ -422,17 +454,9 @@ impl WallElement
                 2.0,
                 WHITE
             );
-        }else {
-            /*
-            draw_rectangle(
-                self.transform.rect.x, 
-                self.transform.rect.y, 
-                self.transform.rect.w, 
-                self.transform.rect.h, 
-                WHITE
-            );
-            */
-            let tile_rect = Rect::new(0.0, 0.0, 16.0, 16.0);
+        }else if self.in_view{
+
+            let tile_rect = Rect::new(self.tilesheet_offset.x, self.tilesheet_offset.y, 16.0, 16.0);
             let mut params = DrawTextureParams::default();
             params.source = Some(tile_rect);
             params.dest_size = Some(vec2( self.transform.rect.w + 20.0, self.transform.rect.h + 20.0));
@@ -450,6 +474,7 @@ pub struct BlockingWallElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
+    in_view: bool,
 }
 impl BlockingWallElement
 {
@@ -458,13 +483,15 @@ impl BlockingWallElement
         entity.set_rect_color(GRAY);
         Self { 
             entity: entity, 
-            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset(),
+            in_view: false, 
         } 
     }
 
     pub fn late_update(&mut self, world: &mut World)
     {
-        self.entity.hit_cooldown();
+        //self.entity.hit_cooldown();
+        self.in_view = inside_windowview(self.entity.transform.rect, world.level_offset);
     }
     pub fn draw(&self)
     {
@@ -479,16 +506,8 @@ impl BlockingWallElement
                 2.0,
                 self.entity.get_rect_color()
             );
-        }else {
-            /*
-            draw_rectangle(
-                self.transform.rect.x, 
-                self.transform.rect.y, 
-                self.transform.rect.w, 
-                self.transform.rect.h, 
-                self.entity.get_rect_color()
-            );
-            */
+        }else if self.in_view{
+
             let tile_rect = Rect::new(17.0, 0.0,16.0, 16.0);
             let mut params = DrawTextureParams::default();
             params.source = Some(tile_rect);
@@ -507,6 +526,7 @@ pub struct TrapWallElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
+    in_view: bool,
 }
 impl TrapWallElement
 {
@@ -515,7 +535,8 @@ impl TrapWallElement
 
         Self { 
             entity: entity, 
-            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset()  
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset(),
+            in_view: false,  
         } 
     }
     pub fn init(&mut self, world: &mut World)
@@ -526,7 +547,8 @@ impl TrapWallElement
     }
     pub fn late_update(&mut self, world: &mut World)
     {
-        self.entity.hit_cooldown();
+        //self.entity.hit_cooldown();
+        self.in_view = inside_windowview(self.entity.transform.rect, world.level_offset);
     }
     pub fn draw(&self)
     {
@@ -541,16 +563,8 @@ impl TrapWallElement
                 2.0,
                 self.entity.get_rect_color()
             );
-        }else {
-           /*
-            draw_rectangle(
-                self.transform.rect.x, 
-                self.transform.rect.y, 
-                self.transform.rect.w, 
-                self.transform.rect.h, 
-                self.entity.get_rect_color()
-            );
-            */
+        }else if self.in_view{
+
             let tile_rect = Rect::new(34.0, 0.0, 16.0, 16.0);
             let mut params = DrawTextureParams::default();
             params.source = Some(tile_rect);
@@ -569,6 +583,7 @@ pub struct DestructibleElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
+    in_view: bool,
 }
 impl DestructibleElement
 {
@@ -581,7 +596,8 @@ impl DestructibleElement
 
         Self { 
             entity: entity, 
-            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset() 
+            sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset(),
+            in_view: false,
         } 
     }
     pub fn update(&mut self, world: &mut World)
@@ -601,6 +617,8 @@ impl DestructibleElement
             world.set_entity(&mut self.entity);
             return;
         }
+
+        self.in_view = inside_windowview(self.entity.transform.rect, world.level_offset);
        
         for entity in world.entities.iter_mut()
         {
@@ -609,7 +627,9 @@ impl DestructibleElement
     }
     pub fn draw(&self)
     {
-        if !self.entity.is_active {}else
+        if !self.entity.is_active {
+            return;
+        }else
         if SHOW_COLLISION 
         {
             draw_rectangle_lines(
@@ -620,7 +640,7 @@ impl DestructibleElement
                 2.0,
                 self.entity.get_rect_color()
             );
-        }else {
+        }else if self.in_view{
             let tile_rect = Rect::new(51.0, 0.0, 16.0, 16.0);
             let mut params = DrawTextureParams::default();
             params.source = Some(tile_rect);
@@ -648,10 +668,6 @@ impl Collision for DestructibleElement
                 self.entity.hit(&entity.entity_params);
                 //play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
-            "Enemy Weapon Missle" => {
-                //self.entity.hit(&entity.entity_params);
-                //play_sound(self.sfx_on_hit.sound.unwrap(), params);
-            }
             _ => {}
         }
     }
@@ -664,6 +680,7 @@ pub struct EnemySpawnerElement
     pub sprite: TextureAsset,
     color: Color,
     spawner: EnemySpawner,
+    in_view: bool,
 }
 impl EnemySpawnerElement
 {
@@ -680,6 +697,7 @@ impl EnemySpawnerElement
             sprite: world.assets.get_asset_by_name("spawner_sheet".to_string()).as_mut().unwrap().get_texture_asset(),
             color: RED,
             spawner: spawner,
+            in_view: false,
         } 
     }
     pub fn init(&mut self, world: &mut World)
@@ -702,12 +720,15 @@ impl EnemySpawnerElement
         if !self.entity.is_active {return;}
         if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, -100.0)) 
         {
+            self.in_view = true;
             if !self.sprite.animation_controller.get_statemachine_mut().animation_states[0].is_playing() &&
             !self.sprite.animation_controller.get_statemachine_mut().animation_states[1].is_playing()
             {
                 self.sprite.animation_controller.get_statemachine_mut().SetState(1);
                 self.sprite.animation_controller.play_anim_once();
             }
+        }else {
+            self.in_view = false;
         }
         if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, 600.0)) {
             if self.entity.entity_params.health > 0.0
@@ -745,7 +766,7 @@ impl EnemySpawnerElement
     }
     pub fn draw(&mut self)
     {
-        //if !self.entity.is_active {return;}
+        if !self.entity.is_active {return;}
         if SHOW_COLLISION  
         {
             draw_rectangle_lines(
@@ -756,7 +777,7 @@ impl EnemySpawnerElement
                 2.0,
                 self.color
             );
-        }else {
+        }else if self.in_view{
             let frame = self.sprite.get_current_anim_controller_frame(); 
             let mut params = DrawTextureParams::default();
             params.dest_size = Some(self.entity.transform.get_fullsize());
@@ -798,6 +819,7 @@ pub struct TurretElement
     pub entity: Entity,
     pub sprite: TextureAsset,
     pub weapon: Weapon,
+    in_view: bool,
 }
 impl TurretElement
 {
@@ -811,7 +833,7 @@ impl TurretElement
         let mut weapon = Weapon::new("Turret", "Enemy Weapon", world);
         weapon.entity.entity_params = entity.entity_params;
 
-        Self { entity: entity, sprite: TextureAsset::new(), weapon: weapon} 
+        Self { entity: entity, sprite: TextureAsset::new(), weapon: weapon, in_view: false} 
     }
 
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
@@ -844,6 +866,8 @@ impl TurretElement
         self.entity.hit_cooldown();
 
         
+        self.in_view = inside_windowview(self.entity.transform.rect, world.level_offset);
+
         for entity in world.entities.iter_mut()
         {
             self.on_collision( entity);
@@ -869,7 +893,7 @@ impl TurretElement
                 self.entity.get_rect_color()
             );
             self.weapon.draw();
-        }else {
+        }else if self.in_view {
             draw_rectangle(
                 self.entity.transform.rect.x, 
                 self.entity.transform.rect.y, 

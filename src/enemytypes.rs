@@ -4,7 +4,7 @@ use super::*;
 
 #[derive(Clone)]
 pub enum EnemyType {
-    Default, Tank, Gunner, HeavyGunner, Exploder, Boss
+    Default, Gunner, Tank, HeavyGunner, Exploder, Boss
 }
 
 #[derive(Clone)]
@@ -30,8 +30,8 @@ impl EnemyVariant
         match e_type
         {
             EnemyType::Default =>   {return EnemyVariant::default_variant(world);}
-            EnemyType::Tank =>     {return EnemyVariant::tank_variant(world);}
             EnemyType::Gunner =>    {return EnemyVariant::gunner_variant(world);}
+            EnemyType::Tank =>     {return EnemyVariant::tank_variant(world);}
             EnemyType::HeavyGunner =>     {return EnemyVariant::tank_variant(world);}
             EnemyType::Exploder =>    {return EnemyVariant::gunner_variant(world);}
             EnemyType::Boss =>    {return EnemyVariant::gunner_variant(world);}
@@ -82,7 +82,10 @@ impl EnemyVariant
 
         let color = PURPLE;
 
-        let weapon = None;
+        let mut weapon = Weapon::new("Tank Weapon", "Enemy Weapon", world);
+        weapon.entity.entity_params = params;
+        weapon.set_stats(params.damage, params.firerate, params.firespeed);
+        world.set_entity(&mut weapon.entity);
 
         let points = 50;
 
@@ -91,7 +94,7 @@ impl EnemyVariant
             sprite: sprite, 
             size: size, 
             color: color, 
-            weapon: weapon, 
+            weapon: Some(weapon), 
             points: points,
 
             sfx_move:       world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),

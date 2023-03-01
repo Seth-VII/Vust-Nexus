@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 pub const GAME_SIZE_X: f32 = 1920.0;
 pub const GAME_SIZE_Y: f32 = 1080.0;
-pub const LATE_UPDATE_TICK: f32 = 0.05;
+pub const LATE_UPDATE_TICK: f32 = 0.065;
 pub const FIXED_UPDATE_TICK: f32 = 0.01;
 pub const SHOW_COLLISION: bool = false;
 pub const COLLISION_COLOR: Color = WHITE;

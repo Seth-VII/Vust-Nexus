@@ -3,7 +3,11 @@ use super::*;
 #[derive(Clone)]
 pub struct LoadedLevelData
 {
+    // Only Visual
     pub walls: Vec<Vec2>,
+    pub infected_wall_filling: Vec<Vec2>,
+
+    // Game Blocks
     pub blockingWalls: Vec<Vec2>,
     pub trapWalls: Vec<Vec2>,
 
@@ -17,6 +21,8 @@ impl LoadedLevelData
     pub fn new() -> Self { 
         Self { 
             walls: Vec::new(), 
+            infected_wall_filling: Vec::new(),
+
             blockingWalls: Vec::new(), 
             trapWalls: Vec::new(), 
             enemy_spawner: Vec::new(), 
@@ -38,7 +44,7 @@ impl LevelLoader
     }
     pub async fn level_loader_init(&mut self)
     {
-        self.init_load_for_wasm("resources/levels/".to_string()).await;
+        self.init_load_for_wasm("resources/levels/Level_1/".to_string()).await;
     }
 
     pub async fn init_load_for_wasm(&mut self, folder_path: String)
@@ -54,14 +60,30 @@ impl LevelLoader
             //"test_level.png",
             //"test_level_2.png",
             //"test_level_3.png",
-            "Level_1.png",
-            "Level_2.png",
+            //"Level_1.png",
+            //"Level_2.png",
+            //"Level_3.png",
+            //"Level_4.png",
+
+            "Level_1_Stage_1.png",
+            "Level_1_Stage_2.png",
+            "Level_1_Stage_3.png",
+            "Level_1_Stage_4.png",
+            "Level_1_Stage_5.png",
         ];
 
         let spawnmap_files = vec![
             //"test_level_3_SpawnMap.png",
-            "Level_1_SpawnMap.png",
-            "Level_2_SpawnMap.png",
+            //"Level_1_SpawnMap.png",
+            //"Level_2_SpawnMap.png",
+            //"Level_3_SpawnMap.png",
+            //"Level_4_SpawnMap.png",
+
+            "Level_1_Stage_1_Spawnmap.png",
+            "Level_1_Stage_2_Spawnmap.png",
+            "Level_1_Stage_3_Spawnmap.png",
+            "Level_1_Stage_4_Spawnmap.png",
+            "Level_1_Stage_5_Spawnmap.png",
         ];
 
         let level_paths = self.build_filepath(level_files, path_dir);
@@ -147,7 +169,11 @@ impl LevelLoader
 
         let threshhold =20.0;
 
+        // Filling
         let _wall = color_u8!(255,255,255,255);
+        let _infected_wall_filling = color_u8!(128,1,128,255);
+
+        // Entitoes
         let _blocking_wall = color_u8!(180,180,180,255);
         let _trap_wall = color_u8!(255,1,128,255);
         let _destructible = color_u8!(0,0,255,255);
@@ -163,6 +189,11 @@ impl LevelLoader
                 if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _wall, threshhold)
                 {
                     new_level.walls.push( position );
+                    
+                }
+                if self.compare_color_in_range( level_image.get_pixel(x as u32, y as u32) , _infected_wall_filling, threshhold)
+                {
+                    new_level.infected_wall_filling.push( position );
                     
                 }
                 

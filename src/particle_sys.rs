@@ -180,40 +180,7 @@ impl ParticleParams {
             speed_end: 1.0,
         }
     }
-    /*
-    
-    pub fn default() -> Self
-    {
-        Self { 
-            spawn_rate: 1.0,
-            spawn_count: 1,
-
-            lifetime: 1.0,
-
-            color_begin: WHITE, 
-            color_end: color_u8!(0,0,0,0), 
-
-            size_begin: vec2(10.0, 10.0), 
-            size_end: vec2(0.0, 0.0), 
-            render_scale: 5.0,
-
-            position_begin: vec2(0.0, 0.0), 
-            position_end: vec2(0.0, 0.0), 
-            position_random_range: vec4(100.0, -100.0, 100.0, -100.0),
-            position_random:  vec2(0.0, 0.0),
-
-            use_velocity: false,
-            spawn_position: vec2(0.0, 0.0), 
-            velocity: vec2(0.0, 0.0), 
-
-            rotation_begin: 0.0, 
-            rotation_end: 1.0,
-            
-            speed_begin: 1.0,
-            speed_end: 1.0,
-        }
-    }
-     */
+  
     pub fn set_color(&mut self, begin: Color, end: Color)
     {
         self.color_begin = begin;
@@ -227,17 +194,6 @@ impl ParticleParams {
     {
         let value = vec2(RandomRange::gen_range(self.position_random_range.x, self.position_random_range.y), RandomRange::gen_range(self.position_random_range.z, self.position_random_range.w));
         self.position_random = vec2(value.x, value.y);
-
-        /*
-        let r = RandomRange::gen_range(0, 255);
-        let g = RandomRange::gen_range(0, 255);
-        let b = RandomRange::gen_range(0, 255);
-        self.color_begin = color_u8!(r,g,b,255);
-        let r = RandomRange::gen_range(0, 255);
-        let g = RandomRange::gen_range(0, 255);
-        let b = RandomRange::gen_range(0, 255);
-        self.color_end = color_u8!(r,g,b,0);
-        */
     }
 
     pub fn randomize_velocity(&mut self, range_x: Vec2, range_y: Vec2)

@@ -57,6 +57,15 @@ impl World
         self.level = None;
         println!("Reload! {}", self.entities.len());
     }
+    pub fn reload_for_next_level(&mut self)
+    {
+        self.entities.clear();
+        self.active_entities.clear();
+        //self.collected_scorepoints = 0;
+        self.particlesystem_pool.clear();
+        self.level = None;
+        println!("Load next Level! {}", self.entities.len());
+    }
 
     pub fn fixed_update(&mut self)
     {

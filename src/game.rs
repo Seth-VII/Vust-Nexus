@@ -274,6 +274,7 @@ impl Game {
     pub fn restart(&mut self)
     {
         self.world.reload();
+        self.selected_level = 0;
         self.load_level();
 
         self.misslepool = MisslePool::new();
@@ -411,13 +412,15 @@ impl Game {
     }
 
     pub fn next_level(&mut self) {
-        self.world.reload();
+        self.world.reload_for_next_level();
         if self.selected_level < self.available_levels -1
         {
             self.selected_level += 1;
-            self.load_level();
-            println!("selected {} / available {}", self.selected_level, self.available_levels);
+        }else {
+            self.selected_level = 0;
         }
+        println!("selected {} / available {}", self.selected_level, self.available_levels);
+        self.load_level();
 
         self.misslepool = MisslePool::new();
         self.misslepool.create_pool(512, &mut self.world);

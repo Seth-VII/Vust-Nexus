@@ -74,7 +74,7 @@ impl BlackBlend
             )
         );
 
-        println!("{:?}", color);
+        //println!("{:?}", color);
         draw_rectangle(level_offset, 0.0, GAME_SIZE_X as f32, GAME_SIZE_Y as f32, color);
     }
 }

@@ -10,7 +10,7 @@ pub const COLLISION_COLOR: Color = WHITE;
 
 pub const SELECTED_LEVEL: usize = 0;
 
-pub const LEVEL_SPEED: f32 = 350.0;
+pub const LEVEL_SPEED: f32 = 300.0;
 
 // Engine
 //------------------

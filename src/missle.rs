@@ -113,7 +113,7 @@ impl Missle
     pub fn new(pool_id: usize,world: &mut World) -> Self
     {
         let fx_params = ParticleParams::new();
-        let vfx = ParticleSystem::new(32, fx_params);
+        let vfx = ParticleSystem::new(world.particlesystem_pool.get_pool_len(),32, fx_params);
 
         Self {
             misslepool_id: pool_id,

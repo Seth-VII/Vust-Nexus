@@ -15,6 +15,9 @@ pub struct Player
     sfx_move: SoundData,
     sfx_shoot: SoundData,
     sfx_on_hit: SoundData,
+
+    particle_system: Option<ParticleSystem>,
+    particle_spawn_position: Vec2,
 }
 impl Player
 {
@@ -29,7 +32,11 @@ impl Player
 
         let sprite = world.assets.get_asset_by_id(4).get_texture_asset();
 
-        
+        let particle_system = world.particlesystem_pool.spawn_system_for_entity(
+            world.particlesystem_pool.get_pool_len(),
+            256, 
+            thruster_settings( vec2(0.0, 0.0),vec2(-5.0, 0.0), color_u8!(255, 0, 255, 0),vec2(-0.7, 1.2), vec2(-3.0, 3.0))
+        );
 
         Self { 
             entity: entity, 
@@ -44,6 +51,8 @@ impl Player
             sfx_shoot: world.assets.get_asset_by_name("fire_1".to_string()).unwrap().get_sound_data(),
             sfx_on_hit: world.assets.get_asset_by_name("hurt_sound_1".to_string()).unwrap().get_sound_data(),
 
+            particle_spawn_position: vec2(0.0, 0.0),
+            particle_system: Some(particle_system)
         }
     }  
     pub fn shoot(&mut self, misslepool: &mut MisslePool, world: &mut World)
@@ -90,16 +99,26 @@ impl Player
                 self.ship_angle -= 350.0 * get_frame_time();
             }
         }
+        self.entity.transform.rotation = f32::to_radians(self.ship_angle); 
+        self.particle_spawn_position = spawn_position;
+    }
 
+    pub fn update_particles(&mut self, world: &mut World)
+    {
 
-        self.entity.transform.rotation = f32::to_radians(self.ship_angle);
-        world.particlesystem_pool.spawn_system_at_position(
-            self.entity.transform.position, 
-            2, 
-            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!(255, 0, 255, 0), vec2(-3.0, 3.0))
-        );
+        match world.particlesystem_pool.get_particlesystem_by_id_mut(self.particle_system.as_ref().unwrap().id)
+        {
+            Some(particle_sys) => {
+                //println!("Player Pool: {}", particle_sys.pool.active_pool.len());
+                particle_sys.transform.set_position( self.particle_spawn_position);
+                particle_sys.params = thruster_settings(self.particle_spawn_position,vec2(-5.0, 0.0), color_u8!(255, 0, 255, 0),vec2(-0.7, 1.2), vec2(-3.0, 3.0));
+                particle_sys.spawn_constant();
+
+            }
+            None => {}
+        }
         
-
+        
     }
 }
 impl GameObject for Player
@@ -195,7 +214,7 @@ impl GameObject for Player
             self.entity.entity_params.health = 0.0;
         }
 
-
+        self.update_particles(world);
         self.update_ship_visuals(world);
        
         // WEAPON
@@ -205,22 +224,13 @@ impl GameObject for Player
         world.set_entity(&mut self.entity);
     }
     fn late_update(&mut self, world: &mut World) {
+        
         for entity in world.entities.iter_mut()
         {
             self.on_collision( entity);
         }
         self.weapon.late_update(world);
-
-        if is_key_down(KeyCode::W) {
-            //self.sprite.animation_controller.get_statemachine_mut().SetState(2);
-        } else if is_key_down(KeyCode::S) {
-            //self.sprite.animation_controller.get_statemachine_mut().SetState(1);
-        } else {
-            //self.sprite.animation_controller.get_statemachine_mut().SetState(0);
-        }
-        
         self.sprite.animation_controller.update();
-
     }
     fn draw(&mut self) {
         if SHOW_COLLISION 

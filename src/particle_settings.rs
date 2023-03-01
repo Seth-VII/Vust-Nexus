@@ -4,12 +4,12 @@ use super::*;
 // Predefined ParticleParams Settings for easier use and Overview inside the entities
 
 
-pub fn thruster_settings( position: Vec2,dir: Vec2, color_tint: Color, spreading_range: Vec2 ) -> ParticleParams
+pub fn thruster_settings( position: Vec2,dir: Vec2, color_tint: Color, x_spreading_range: Vec2,y_spreading_range: Vec2 ) -> ParticleParams
 {    
 
     let mut params : ParticleParams = ParticleParams { 
-        spawn_rate: 0.5,
-        spawn_count: 1,
+        spawn_rate: 200.0,
+        spawn_count: 2,
 
         lifetime: 1.2,
 
@@ -22,14 +22,16 @@ pub fn thruster_settings( position: Vec2,dir: Vec2, color_tint: Color, spreading
         use_velocity: true,
         spawn_position: position, 
         velocity: dir, 
+        x_spreading: x_spreading_range,
+        y_spreading: y_spreading_range,
         
         speed_begin: 3.0,
         speed_end: 1.0,
         ..Default::default()
     };
     params.randomize_velocity( 
-        vec2(0.0, 2.0),
-        spreading_range
+        x_spreading_range,
+        y_spreading_range
     );
 
     params
@@ -130,6 +132,7 @@ pub fn explosion_settings( color_1: Color,  color_2: Color , color_end: Color ) 
         
         speed_begin: 6.0,
         speed_end: 1.0,
+        ..Default::default()
     };
 
     params.randomize_color(color_1, color_2);

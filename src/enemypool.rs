@@ -94,6 +94,7 @@ impl GameObject for EnemyPool
     fn late_update(&mut self, world: &mut World) {
         for enemy in self.pool.iter_mut()
         {
+            enemy.late_update(world);
             for entity in world.get_actives().iter_mut()
             {
                 enemy.on_collision(entity);

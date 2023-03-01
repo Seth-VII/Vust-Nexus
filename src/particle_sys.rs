@@ -14,9 +14,10 @@ impl ParticleSystemPool
     {
         Self { pool: Vec::new()}
     }
+    pub fn get_pool_len(&self) -> usize {self.pool.len()}
     pub fn spawn_system_at_position(&mut self, position: Vec2, particle_count: usize, params: ParticleParams)
     {
-        let mut particle_system = ParticleSystem::new(particle_count, params);
+        let mut particle_system = ParticleSystem::new( self.pool.len() ,particle_count, params);
         particle_system.transform.position = position;
         particle_system.spawn_once();
         self.pool.push(particle_system);
@@ -24,17 +25,30 @@ impl ParticleSystemPool
 
     pub fn spawn_constant_system_at_position(&mut self, position: Vec2, particle_count: usize, params: ParticleParams)
     {
-        let mut particle_system = ParticleSystem::new(particle_count, params);
+        let mut particle_system = ParticleSystem::new( self.pool.len() ,particle_count, params);
         particle_system.transform.position = position;
         particle_system.spawn_constant();
         self.pool.push(particle_system);
     }
+
+    pub fn spawn_system_for_entity(&mut self, id: usize, particle_count: usize, params: ParticleParams) -> ParticleSystem
+    {
+        let particle_system = ParticleSystem::new(id,particle_count, params);
+        self.pool.push(particle_system.clone());
+        particle_system
+    }
+
+    pub fn get_particlesystem_by_id_mut(&mut self, id: usize) -> Option<&mut ParticleSystem>
+    {
+        self.pool.iter_mut().find(|x| x.id == id)
+    }
+
     pub fn clear(&mut self) { self.pool.clear();}
 
 
     pub fn update(&mut self,world: &mut World)
     {
-        self.pool.retain(|p| p.is_active == true);
+        self.pool.retain(|p| p.is_active == true || p.spawning_constant == true);
         for ps in self.pool.iter_mut()
         {
             ps.update_particles(world);
@@ -54,23 +68,25 @@ impl ParticleSystemPool
 pub struct ParticleSystem
 {
     pub transform: Transform,
-    
+    pub id: usize,
     pub pool: ParticlePool,
     
     pub params: ParticleParams,
     spawn_timer: f32,
+    spawning_constant: bool,
     pub is_active: bool
 }
 impl ParticleSystem {
-    pub fn new( pool_size: usize, params: ParticleParams) -> Self{
-
+    pub fn new( id: usize, pool_size: usize, params: ParticleParams) -> Self{
 
         Self { 
             transform: Transform::zero(),
+            id: id,
             params: params,
             pool: ParticlePool::new(pool_size, params),
             spawn_timer: 1.0,
             is_active: true,
+            spawning_constant: false,
         }
     }
     pub fn set_particle_parameter( &mut self, params: ParticleParams)
@@ -80,16 +96,19 @@ impl ParticleSystem {
 
     pub fn spawn_constant(&mut self)
     {
+        self.spawning_constant = true;
         if self.spawn_timer > 0.0
         {
             self.spawn_timer -= self.params.spawn_rate * 2.0 * get_frame_time();
-            return;
-        }
-        self.spawn_timer = 1.0;
-        for _i in 0..self.params.spawn_count 
-        {
-            self.params.randomize();
-            self.pool.spawn_particle(self.params,self.transform);
+        }else {
+            
+            self.spawn_timer = 1.0;
+            for _i in 0..self.params.spawn_count 
+            {
+                self.params.randomize();
+                self.params.randomize_velocity(self.params.x_spreading, self.params.y_spreading);
+                self.pool.spawn_continous_particles(self.params,self.transform);
+            }
         }
     }
     pub fn spawn_once(&mut self)
@@ -103,18 +122,21 @@ impl ParticleSystem {
     }
     pub fn update_particles(&mut self, world: &mut World)
     {
-        if !self.is_active {return;}
+        if !self.is_active && !self.spawning_constant {return;}
 
         if self.pool.active_pool.len() > 0
         {
             self.pool.update(world);
         }else {
-            self.is_active = false;
+            if !self.spawning_constant
+            {
+                self.is_active = false;
+            }
         }
     }
     pub fn draw_particles(&mut self)
     {
-        if !self.is_active {return;}
+        if !self.is_active && !self.spawning_constant {return;}
         self.pool.draw();
     }
 }
@@ -142,6 +164,8 @@ pub struct ParticleParams
     pub use_velocity: bool,
     pub spawn_position: Vec2,
     pub velocity: Vec2,
+    pub x_spreading: Vec2,
+    pub y_spreading: Vec2,
 
     pub rotation_begin: f32,
     pub rotation_end: f32,
@@ -172,6 +196,8 @@ impl ParticleParams {
             use_velocity: false,
             spawn_position: vec2(0.0, 0.0), 
             velocity: vec2(0.0, 0.0), 
+            x_spreading: vec2(0.0, 0.0),
+            y_spreading: vec2(0.0, 0.0),
             
             rotation_begin: 0.0, 
             rotation_end: 1.0,
@@ -180,40 +206,7 @@ impl ParticleParams {
             speed_end: 1.0,
         }
     }
-    /*
-    
-    pub fn default() -> Self
-    {
-        Self { 
-            spawn_rate: 1.0,
-            spawn_count: 1,
-
-            lifetime: 1.0,
-
-            color_begin: WHITE, 
-            color_end: color_u8!(0,0,0,0), 
-
-            size_begin: vec2(10.0, 10.0), 
-            size_end: vec2(0.0, 0.0), 
-            render_scale: 5.0,
-
-            position_begin: vec2(0.0, 0.0), 
-            position_end: vec2(0.0, 0.0), 
-            position_random_range: vec4(100.0, -100.0, 100.0, -100.0),
-            position_random:  vec2(0.0, 0.0),
-
-            use_velocity: false,
-            spawn_position: vec2(0.0, 0.0), 
-            velocity: vec2(0.0, 0.0), 
-
-            rotation_begin: 0.0, 
-            rotation_end: 1.0,
-            
-            speed_begin: 1.0,
-            speed_end: 1.0,
-        }
-    }
-     */
+   
     pub fn set_color(&mut self, begin: Color, end: Color)
     {
         self.color_begin = begin;
@@ -227,7 +220,6 @@ impl ParticleParams {
     {
         let value = vec2(RandomRange::gen_range(self.position_random_range.x, self.position_random_range.y), RandomRange::gen_range(self.position_random_range.z, self.position_random_range.w));
         self.position_random = vec2(value.x, value.y);
-
         /*
         let r = RandomRange::gen_range(0, 255);
         let g = RandomRange::gen_range(0, 255);
@@ -306,6 +298,8 @@ impl Default for ParticleParams
             use_velocity: false,
             spawn_position: vec2(0.0, 0.0), 
             velocity: vec2(0.0, 0.0), 
+            x_spreading: vec2(0.0, 0.0),
+            y_spreading: vec2(0.0, 0.0),
 
             rotation_begin: 0.0, 
             rotation_end: 1.0,
@@ -348,18 +342,34 @@ impl ParticlePool
             }
         }
     }
+    pub fn spawn_continous_particles(&mut self, params: ParticleParams, transform:Transform)
+    {
+        for particle in self.pool.iter_mut()
+        {
+            println!("Active {}", particle.is_active);
+            if particle.is_active == false
+            {
+                particle.set_start(params,transform);
+                self.active_pool.push(particle.clone());
+
+                return;
+            }else {
+                self.display_count = particle.id;
+            }
+        }
+    }
     
     pub fn update(&mut self, world: &mut World)
     {
         self.active_pool.retain(|p| p.is_active == true);
-        for i in self.active_pool.iter_mut()
+        for i in self.pool.iter_mut().filter(|p| p.is_active == true)
         {
             i.update(world);
         }
     }
     pub fn draw(&mut self)
     {
-        for i in self.active_pool.iter_mut()
+        for i in self.pool.iter_mut().filter(|p| p.is_active == true)
         {
             i.draw();
         }

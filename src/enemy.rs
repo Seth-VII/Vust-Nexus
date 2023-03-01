@@ -9,6 +9,9 @@ pub struct Enemy
 
     pub variant: EnemyVariant,
     pub in_viewspace: bool,
+
+    color_tint: Color,
+    direction: Vec2, 
 }
 impl Enemy
 {
@@ -19,6 +22,8 @@ impl Enemy
             entity: Entity::new("Enemy", "Enemy", world), 
             variant: EnemyVariant::get_variant(EnemyType::Default, world),
             in_viewspace: false,
+            color_tint: WHITE,
+            direction: vec2(0.0, 0.0),
         }
     }
     
@@ -64,14 +69,14 @@ impl GameObject for Enemy
     }
     fn update(&mut self, world: &mut World) {
         
-        let color =  color_u8!( self.variant.color.r * 255.0, self.variant.color.g * 255.0, self.variant.color.b * 255.0, 0);
+        
         if self.entity.entity_params.health <= 0.0
         {
             let mut params = PlaySoundParams::default();
             params.volume = 0.5;
             play_sound(world.assets.get_asset_by_name("explosion_2".to_string()).unwrap().get_sound_data().sound.unwrap(), params );
 
-            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 128, explosion_settings( self.variant.color, WHITE, color));
+            world.particlesystem_pool.spawn_system_at_position(self.entity.transform.position, 128, explosion_settings( self.variant.color, WHITE, self.color_tint));
 
             self.reset();
             world.add_scorepoints( self.variant.points);
@@ -81,27 +86,11 @@ impl GameObject for Enemy
 
         self.entity.hit_cooldown();
 
-        // MOVEMENT
-        //println!("active {}", self.entity.is_active);
-        let dir = (self.entity.transform.position - world.get_entity_by_tag("Player").as_ref().unwrap().transform.position).normalize();
-        let position = self.entity.transform.position - (dir * self.entity.entity_params.speed * get_frame_time());
+        let position = self.entity.transform.position - (self.direction * self.entity.entity_params.speed * get_frame_time());
         self.entity.transform.set_position(position);
-        
-        let rotation = f32::atan2(dir.x, dir.y) * -1.0;
+        let rotation = f32::atan2(self.direction.x, self.direction.y) * -1.0;
         self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 270.0);
 
-
-
-        // Thruster Particle Adjustment
-        let mut spawn_position = position + (dir * 10.0);
-
-        
-
-        world.particlesystem_pool.spawn_system_at_position(
-            self.entity.transform.position, 
-            1, 
-            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!( color.r * 255.0, color.g * 255.0, color.b * 255.0, 0), vec2(-3.0, 3.0))
-        );
 
 
         match &mut self.variant.weapon
@@ -117,6 +106,23 @@ impl GameObject for Enemy
 
     }
     fn late_update(&mut self, world: &mut World) {
+        let color =  color_u8!( self.variant.color.r * 255.0, self.variant.color.g * 255.0, self.variant.color.b * 255.0, 0);
+        self.color_tint = color;
+        // MOVEMENT
+        //println!("active {}", self.entity.is_active);
+        let dir = (self.entity.transform.position - world.get_entity_by_tag("Player").as_ref().unwrap().transform.position).normalize();
+        self.direction = dir;
+        let position = self.entity.transform.position - (dir * self.entity.entity_params.speed * get_frame_time());
+        
+       
+        // Thruster Particle Adjustment
+        let spawn_position = position + (dir * 10.0);
+
+        world.particlesystem_pool.spawn_system_at_position(
+            self.entity.transform.position, 
+            1, 
+            thruster_settings(spawn_position,vec2(-5.0, 0.0), color_u8!( color.r * 255.0, color.g * 255.0, color.b * 255.0, 0), vec2(0.0, 0.2), vec2(-3.0, 3.0))
+        );
         match &mut self.variant.weapon
         {
             Some(weapon) => {

@@ -81,7 +81,9 @@ impl World
     pub fn update_actives(&mut self)
     {
         self.active_entities = self.entities.clone();
-        self.active_entities.retain(|e| e.is_active == true);
+        self.active_entities.retain(|e| e.is_active == true && e.in_view == true);
+
+        
 
         if !self.get_active_level().has_reached_level_end(self.level_offset)
         {
@@ -90,6 +92,7 @@ impl World
     }
     pub fn get_actives(&mut self) -> &mut Vec<Entity>
     {
+        //println!("Active Entities {}", self.active_entities.len());
         &mut self.active_entities
     }
 

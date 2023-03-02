@@ -76,6 +76,8 @@ pub struct Entity
     pub entity_params: EntityParams,
 
     pub is_active: bool,
+    pub in_view: bool,
+
     pub collision_is_enabled: bool,
     pub sprite_is_active: bool,
 
@@ -95,6 +97,8 @@ impl Entity
             tag: tag.to_string(),
             transform: Transform::default(),
             is_active: true,
+            in_view: false,
+            
             entity_params: EntityParams::default(),
             collision_is_enabled: true,
             sprite_is_active: true,

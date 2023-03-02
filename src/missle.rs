@@ -196,7 +196,7 @@ impl GameObject for Missle
     fn late_update(&mut self, world: &mut World) {
         //let mut filtered_world = world.entities.clone();
         //filtered_world.retain(|e| e.tag != "Missle");
-        for entity in world.entities.iter_mut()
+        for entity in world.get_actives().iter_mut()
         {
             if !entity.tag.contains("Missle")
             {

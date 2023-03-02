@@ -389,18 +389,18 @@ impl Game {
         let level_position = vec2( GAME_SIZE_X * 0.5 + self.world.level_offset , GAME_SIZE_Y * 0.5);
         self.camera.target = level_position;
         set_camera(&self.camera);
-        self.level_update();
-
+        
         // Update Missles
         self.misslepool.update(&mut self.world);
         
         // Update Enemies
         self.enemypool.update(&mut self.world);
         self.enemypool.enemy_shoot(&mut self.misslepool, &mut self.world);
-
+        
         // Update Player
         self.player.update(&mut self.world);
         self.player.shoot(&mut self.misslepool, &mut self.world);
+        self.level_update();
 
     }
     pub fn fixed_update(&mut self)

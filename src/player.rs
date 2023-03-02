@@ -205,7 +205,7 @@ impl GameObject for Player
         world.set_entity(&mut self.entity);
     }
     fn late_update(&mut self, world: &mut World) {
-        for entity in world.entities.iter_mut()
+        for entity in world.get_actives().iter_mut()
         {
             self.on_collision( entity);
         }

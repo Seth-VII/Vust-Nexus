@@ -86,7 +86,7 @@ fn window_conf() -> Conf
 
     let app_conf : Conf = Conf 
     {
-        window_title        : "RustDefenders".to_string(),
+        window_title        : "VustNexus".to_string(),
         window_width        : GAME_SIZE_X as i32,
         window_height       : GAME_SIZE_Y as i32,
         high_dpi            : false,
@@ -112,7 +112,9 @@ async fn main() {
         
        
         draw_rectangle_lines(0.0, 0.0, screen_width(), screen_height(), 2.0, WHITE);
-        draw_circle_lines(mouse_position().0, mouse_position().1, 5.0, 1.0, WHITE);
+        // Cursor
+        draw_circle_lines(mouse_position().0, mouse_position().1, 7.0, 3.5, color_u8!(0,64,128,255));
+        draw_circle_lines(mouse_position().0, mouse_position().1, 7.0, 1.3, WHITE);
 
         next_frame().await;
     }

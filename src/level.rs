@@ -103,9 +103,24 @@ impl Level
     }
     pub fn update(&mut self, world: &mut World)
     {
+        for trap_wall_element in self.leveldata.trapwalls.iter_mut()
+        {
+            trap_wall_element.update(world);
+        }
         for destructible_element in self.leveldata.destructibles.iter_mut()
         {
             destructible_element.update(world);
+        }
+    }
+    pub fn fixed_update(&mut self, world: &mut World)
+    {
+        for trap_wall_element in self.leveldata.trapwalls.iter_mut()
+        {
+            trap_wall_element.fixed_update(world);
+        }
+        for destructible_element in self.leveldata.destructibles.iter_mut()
+        {
+            destructible_element.fixed_update(world);
         }
     }
 
@@ -534,26 +549,69 @@ pub struct TrapWallElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
+
+    sfx_on_hit: SoundData,
 }
 impl TrapWallElement
 {
     pub fn new(world: &mut World) -> Self { 
-        let entity = Entity::new("Trap", "TrapWall", world);
+        let mut entity = Entity::new("Trap", "TrapWall", world);
 
+        entity.set_rect_color(WHITE);
+        entity.hit_feedback_timer = 0.001;
         Self { 
             entity: entity, 
             sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset(), 
+
+            sfx_on_hit: world.assets.get_asset_by_name("hurt_sound_1".to_string()).unwrap().get_sound_data(),
         } 
     }
     pub fn init(&mut self, world: &mut World)
     {
         self.entity.entity_params = EntitySettings::trap_settings(world);
-        self.entity.set_rect_color(MAGENTA);
         world.set_entity(&mut self.entity);
+    }
+    pub fn update(&mut self, world: &mut World)
+    {
+ 
+        if !self.entity.is_active {return;}
+        self.entity.hit_cooldown();
+       
+    }
+    pub fn fixed_update(&mut self, world: &mut World)
+    {
+        for entity in world.get_actives().iter_mut()
+        {
+            self.on_collision( entity);
+        }
     }
     pub fn late_update(&mut self, world: &mut World)
     {
-        //self.entity.hit_cooldown();
+        if inside_windowview(self.entity.transform.rect, world.level_offset){
+            self.entity.is_active = true;
+            self.entity.in_view = true;
+        }else {
+            self.entity.is_active = false;
+            self.entity.in_view = false;
+        }
+        world.set_entity(&mut self.entity);
+        if !self.entity.is_active {return;}
+        if self.entity.entity_params.health <= 0.0
+        {
+            self.entity.is_active = false;
+            self.entity.entity_params.health = 1.0;
+
+            world.add_scorepoints( 5 + (3 * world.difficulty_level ) );
+
+            world.particlesystem_pool.spawn_system_at_position( 
+                self.entity.transform.position, 
+                64, 
+                destruction_settings(LIGHTGRAY, WHITE, DARKGRAY));
+            self.entity.transform = Transform::zero();
+            world.set_entity(&mut self.entity);
+            return;
+        }
+        
         self.entity.in_view = inside_windowview(self.entity.transform.rect, world.level_offset);
     }
     pub fn draw(&self)
@@ -571,7 +629,7 @@ impl TrapWallElement
             );
         }else if self.entity.in_view{
 
-            let tile_rect = Rect::new(34.0, 0.0, 16.0, 16.0);
+            let tile_rect = Rect::new(0.0, 16.0, 16.0, 16.0);
             let mut params = DrawTextureParams::default();
             params.source = Some(tile_rect);
             params.dest_size = Some(vec2( self.entity.transform.rect.w + 20.0, self.entity.transform.rect.h + 20.0));
@@ -579,16 +637,38 @@ impl TrapWallElement
             draw_texture_ex(self.sprite.texture_data, 
                 self.entity.transform.rect.x - 10.0, 
                 self.entity.transform.rect.y- 10.0, 
-                WHITE, params);
+                self.entity.get_rect_color(), 
+                params);
         }
     }
 }
+impl Collision for TrapWallElement
+{
+    fn on_collision(&mut self, entity: &mut Entity) {
+        if !resolve_intersection(self.entity.transform.rect,entity.transform.rect)
+        {
+            return;
+        }
+        let mut params = PlaySoundParams::default();
+        params.volume = 0.07;
+        match entity.tag.as_str()
+        {
+            "Player Weapon Missle" => {
+                self.entity.hit(&entity.entity_params);
+                play_sound(self.sfx_on_hit.sound.unwrap(), params);
+            }
+            _ => {}
+        }
+    }
+} 
 
 #[derive(Clone)]
 pub struct DestructibleElement
 {
     pub entity: Entity,
     pub sprite: TextureAsset,
+
+    sfx_on_hit: SoundData,
 }
 impl DestructibleElement
 {
@@ -602,12 +682,18 @@ impl DestructibleElement
         Self { 
             entity: entity, 
             sprite: world.assets.get_asset_by_name("tile_texture_atlas".to_string()).as_mut().unwrap().get_texture_asset(),
+
+            sfx_on_hit: world.assets.get_asset_by_name("hurt_sound_1".to_string()).unwrap().get_sound_data(),
         } 
     }
     pub fn update(&mut self, world: &mut World)
     {
         if !self.entity.is_active {return;}
         self.entity.hit_cooldown();
+       
+    }
+    pub fn fixed_update(&mut self, world: &mut World)
+    {
         for entity in world.get_actives().iter_mut()
         {
             self.on_collision( entity);
@@ -627,6 +713,9 @@ impl DestructibleElement
         {
             self.entity.is_active = false;
             self.entity.entity_params.health = 1.0;
+
+            world.add_scorepoints( 3 + (2 * world.difficulty_level ) );
+
             world.particlesystem_pool.spawn_system_at_position( 
                 self.entity.transform.position, 
                 64, 
@@ -675,13 +764,13 @@ impl Collision for DestructibleElement
         {
             return;
         }
-        //let mut params = PlaySoundParams::default();
-        //params.volume = 0.15;
+        let mut params = PlaySoundParams::default();
+        params.volume = 0.07;
         match entity.tag.as_str()
         {
             "Player Weapon Missle" => {
                 self.entity.hit(&entity.entity_params);
-                //play_sound(self.sfx_on_hit.sound.unwrap(), params);
+                play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
             _ => {}
         }
@@ -695,6 +784,8 @@ pub struct EnemySpawnerElement
     pub sprite: TextureAsset,
     color: Color,
     spawner: EnemySpawner,
+
+    sfx_on_hit: SoundData,
 }
 impl EnemySpawnerElement
 {
@@ -711,6 +802,7 @@ impl EnemySpawnerElement
             sprite: world.assets.get_asset_by_name("spawner_sheet".to_string()).as_mut().unwrap().get_texture_asset(),
             color: RED,
             spawner: spawner,
+            sfx_on_hit: world.assets.get_asset_by_name("hurt_sound_1".to_string()).unwrap().get_sound_data(),
         } 
     }
     pub fn init(&mut self, world: &mut World)
@@ -753,6 +845,8 @@ impl EnemySpawnerElement
         {
             self.entity.is_active = false;
             self.entity.entity_params.health = 1.0;
+
+            world.add_scorepoints( 25 + (6 * world.difficulty_level ) );
 
             let mut params = PlaySoundParams::default();
             params.volume = 0.5;
@@ -819,13 +913,13 @@ impl Collision for EnemySpawnerElement
         {
             return;
         }
-        //let mut params = PlaySoundParams::default();
-        //params.volume = 0.15;
+        let mut params = PlaySoundParams::default();
+        params.volume = 0.15;
         match entity.tag.as_str()
         {
             "Player Weapon Missle" => {
                 self.entity.hit(&entity.entity_params);
-                //play_sound(self.sfx_on_hit.sound.unwrap(), params);
+                play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
             _ => {}
         }

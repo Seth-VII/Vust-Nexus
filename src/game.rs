@@ -304,6 +304,7 @@ impl Game {
         // Reload everything
         self.world.reload();
         self.selected_level = 0;
+        self.world.difficulty_level = 0;
         self.load_level();
 
         self.misslepool = MisslePool::new();
@@ -411,6 +412,7 @@ impl Game {
     pub fn fixed_update(&mut self)
     {
         self.world.fixed_update();
+        self.level_fixed_update();
     }
     pub fn late_update(&mut self)
     {
@@ -470,14 +472,20 @@ impl Game {
         if self.selected_level < self.available_levels -1
         {
             self.selected_level += 1;
-            // Add 10 Healthpoints at the end of each Stage
+
+            // Add 25 Healthpoints at the end of each Stage
             let mut player_settings = self.player_settings.get_settings();
-            player_settings.health += 10.0;
+            player_settings.health += 25.0;
+            if player_settings.health > 100.0 { player_settings.health = 100.0;}
             self.player_settings.save(player_settings);
         }else {
-            self.selected_level = 0;
+            self.selected_level = 5;
             // Increase Difficulty after Level
             self.world.difficulty_level += 1;
+
+            let mut player_settings = self.player_settings.get_settings();
+            player_settings.health = 100.0;
+            self.player_settings.save(player_settings);
         }
         // Load Level
         println!("selected {} / available {}", self.selected_level, self.available_levels);
@@ -520,7 +528,16 @@ impl Game {
             self.world.level =  Some(lvl);
         }
     }
-
+    pub fn level_fixed_update(&mut self)
+    {
+        //self.level.as_mut().unwrap().late_update(self, misslepool);
+        if self.level.is_some() {
+            let mut lvl = self.level.as_mut().unwrap().clone();
+            lvl.fixed_update(&mut self.world);
+            self.level = Some(lvl.clone());
+            self.world.level =  Some(lvl);
+        }
+    }
     pub fn level_late_update(&mut self)
     {
         //self.level.as_mut().unwrap().late_update(self, misslepool);

@@ -267,6 +267,13 @@ impl Collision for Missle
                     play_sound( self.sfx_hit.sound.unwrap(), params);
                 }
             },
+            "TrapWall" => {
+                if self.entity.tag.contains("Player")
+                {
+                    self.reset_missle();
+                    play_sound( self.sfx_hit.sound.unwrap(), params);
+                }
+            },
             "Turret" => {
                 if self.entity.tag.contains("Player")
                 {

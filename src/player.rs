@@ -208,6 +208,7 @@ impl GameObject for Player
         for entity in world.get_actives().iter_mut()
         {
             self.on_collision( entity);
+
         }
         self.weapon.late_update(world);
 
@@ -280,6 +281,7 @@ impl Collision for Player
                 self.entity.hit(&entity.entity_params);
                 play_sound(self.sfx_on_hit.sound.unwrap(), params);
             }
+            
             _ => {}
         }
     }

@@ -374,7 +374,7 @@ impl Game {
             available_levels: loader.levels.len(),
             level_loader: loader,
             level: None,
-            selected_level:4,
+            selected_level:0,
             level_transition: BlackBlend::default(),
 
             misslepool: misslepool,

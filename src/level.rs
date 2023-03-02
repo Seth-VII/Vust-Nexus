@@ -223,10 +223,10 @@ impl LevelData
     pub fn load_wall_fillings(&mut self, loader_data: &LoadedLevelData, world: &mut World)
     {
         println!("Load Walls... ");
-        //println!("Load Infected {}", (loader_data.walls.len()  + loader_data.infected_wall_filling.len()));
+
         for i in 0..(loader_data.walls.len()  + loader_data.infected_wall_filling.len())
         {
-            //println!("LevelData: {}", walls[i]);
+
             let mut wall = WallElement::new(world);
             wall.transform.set_size( vec2(1.0, 1.0));
             wall.transform.set_scale( self.level_scale );
@@ -407,6 +407,13 @@ impl LevelEndElement
                 2.0,
                 self.entity.get_rect_color()
             );
+            draw_rectangle(
+                self.entity.transform.rect.x, 
+                self.entity.transform.rect.y, 
+                self.entity.transform.rect.w, 
+                self.entity.transform.rect.h, 
+                color_u8!(128,0,64,32)
+            )
         }
     }
 }

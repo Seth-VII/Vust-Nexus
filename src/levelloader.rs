@@ -70,6 +70,12 @@ impl LevelLoader
             "Level_1_Stage_3.png",
             "Level_1_Stage_4.png",
             "Level_1_Stage_5.png",
+
+            "Level_1_Stage_6.png",
+            "Level_1_Stage_7.png",
+            "Level_1_Stage_8.png",
+            "Level_1_Stage_9.png",
+            "Level_1_Stage_10.png",
         ];
 
         let spawnmap_files = vec![
@@ -84,6 +90,12 @@ impl LevelLoader
             "Level_1_Stage_3_Spawnmap.png",
             "Level_1_Stage_4_Spawnmap.png",
             "Level_1_Stage_5_Spawnmap.png",
+
+            "Level_1_Stage_6_Spawnmap.png",
+            "Level_1_Stage_7_Spawnmap.png",
+            "Level_1_Stage_8_Spawnmap.png",
+            "Level_1_Stage_9_Spawnmap.png",
+            "Level_1_Stage_10_Spawnmap.png",
         ];
 
         let level_paths = self.build_filepath(level_files, path_dir);

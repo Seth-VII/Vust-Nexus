@@ -135,7 +135,7 @@ impl Missle
         }else 
         {
             // Missle Texture -> Size Squared for balanced shooting in a rotation
-            self.entity.transform.set_size(vec2( self.sprite.height(), self.sprite.height()));
+            self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
             self.entity.transform.set_scale( 1.5 );
         }
 

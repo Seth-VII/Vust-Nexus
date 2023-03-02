@@ -126,7 +126,7 @@ impl GameObject for Weapon
                 self.entity.transform.rotation = f32::to_radians(rotation.to_degrees() - 90.0); 
                 
                 
-                self.direction += vec2(LEVEL_SPEED * get_frame_time(), 0.0).normalize() * 0.3333;
+                self.direction += vec2(LEVEL_SPEED * get_frame_time(), 0.0).normalize() * 0.466;
                 // Update from parent
                 match &mut self.parent
                 {

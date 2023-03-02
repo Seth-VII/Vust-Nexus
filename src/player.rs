@@ -18,14 +18,14 @@ pub struct Player
 }
 impl Player
 {
-    pub fn new(world: &mut World) -> Self
+    pub fn new(world: &mut World, settings: &EntityParams) -> Self
     {
         let mut player_weapon = Weapon::new("Player Weapn", "Player Weapon", world);
         player_weapon.init(world);
         
         let mut entity = Entity::new("Player", "Player", world);
 
-        entity.entity_params = EntitySettings::player_settings();
+        entity.entity_params = settings.clone();
 
         let sprite = world.assets.get_asset_by_id(4).get_texture_asset();
 
@@ -118,7 +118,7 @@ impl GameObject for Player
             //self.entity.transform.set_size(vec2( self.sprite.width(), self.sprite.height()));
             self.entity.transform.set_scale( 2.0);
         }
-        self.entity.transform.set_position( vec2( self.entity.transform.position.x + GAME_SIZE_X * 0.5,self.entity.transform.position.y + GAME_SIZE_Y * 0.5 ));
+        self.entity.transform.set_position( vec2( self.entity.transform.position.x + world.level_offset * 0.0,self.entity.transform.position.y + GAME_SIZE_Y * 0.5 ));
         self.entity.set_rect_color(WHITE);
     }
     fn update(&mut self, world: &mut World) {

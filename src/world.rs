@@ -5,7 +5,7 @@ pub struct World
     pub assets: AssetLibrary,
 
     //pub level_loader: LevelLoader,
-    //pub available_levels: usize,
+    pub available_levels: usize,
     pub level: Option<Level>,
     pub level_offset: f32,
     pub level_completed: bool,
@@ -15,6 +15,8 @@ pub struct World
     active_entities: Vec<Entity>,
 
     collected_scorepoints: i32,
+
+    pub difficulty_level: i32,
 
     pub particlesystem_pool: ParticleSystemPool,
 }
@@ -31,16 +33,17 @@ impl World
         Self {
             assets: assets,
 
-            //available_levels: loader.levels.len(),
+            available_levels: loader.levels.len(),
             //level_loader: loader,
             level: None,
-            level_offset: 0.0,
+            level_offset: -GAME_SIZE_X * 0.5,
             level_completed: false,
             //selected_level: 0,
             
             entities: Vec::new(),
             active_entities: Vec::new(), 
             collected_scorepoints: 0,
+            difficulty_level: 0,
             particlesystem_pool: ParticleSystemPool::new(),
         }
     }

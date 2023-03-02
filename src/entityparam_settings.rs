@@ -1,45 +1,63 @@
 use super::*;
 
+pub struct SavedEntitySettings{
+    entity_settings: EntityParams,
+}
+impl SavedEntitySettings
+{
+    pub fn new() -> Self 
+    {
+        Self { entity_settings: EntityParams::default() }
+    }
+    pub fn save(&mut self ,params: EntityParams)
+    {
+        self.entity_settings = params;
+    }
+    pub fn get_settings(&self) -> EntityParams
+    {
+        self.entity_settings
+    }
+}
+
 pub struct EntitySettings{}
 impl EntitySettings{
-
     pub fn player_settings() -> EntityParams
     {
         let mut params = EntityParams::default();
-        params.health = 1000000.0;
-        params.armor = 3.0;
-        params.speed = 250.0;
+        params.health = 100.0;
+        params.armor = 2.0;
+        params.speed = 350.0;
         params.damage = 3.0;
         params.firerate = 60.0;
-        params.firespeed = 1000.0;
+        params.firespeed = 700.0;
         return params;
     }
 
     // ---------------------------------
     // Level Tiles
-    pub fn spawner_settings() -> EntityParams
+    pub fn spawner_settings( world: &mut World) -> EntityParams
     {
         let mut params = EntityParams::default();
-        params.health = 10.0;
+        params.health = 10.0 + (1.0 * world.difficulty_level as f32);
         params.armor = 5.0;
         return params;
     }
-    pub fn trap_settings() -> EntityParams
+    pub fn trap_settings( world: &mut World) -> EntityParams
     {
         let mut params = EntityParams::default();
         params.health = 50.0;
         params.armor = 3.0;
-        params.damage = 100000.0;
+        params.damage = 10.0 + (1.0 * world.difficulty_level as f32);
         return params;
     }
-    pub fn destructible_settings() -> EntityParams
+    pub fn destructible_settings( world: &mut World) -> EntityParams
     {
         let mut params = EntityParams::default();
-        params.health = 6.0;
-        params.armor = 1.0;
+        params.health = 10.0 + (1.0 * world.difficulty_level as f32);
+        params.armor = 3.0 + (0.5 * world.difficulty_level as f32);
         return params;
     }
-    pub fn turret_settings() -> EntityParams
+    pub fn turret_settings( world: &mut World) -> EntityParams
     {
         let mut params = EntityParams::default();
         params.health = 10.0;
@@ -53,7 +71,38 @@ impl EntitySettings{
     // ---------------------------------
     // Enemies
 
-    pub fn enemy_default_settings() -> EntityParams
+    pub fn enemy_default_settings( world: &mut World) -> EntityParams
+    {
+        let mut params = EntityParams::default();
+        params.health = 5.0 + (1.5 * world.difficulty_level as f32);
+        params.speed = 250.0 + (1.25 * world.difficulty_level as f32);
+        params.armor = 2.0 + (0.3 * world.difficulty_level as f32);
+        params.damage = 2.0 + (0.5 * world.difficulty_level as f32);
+        return params;
+    }
+    pub fn enemy_tank_settings( world: &mut World) -> EntityParams
+    {
+        let mut params = EntityParams::default();
+        params.health = 20.0 + (3.0 * world.difficulty_level as f32);
+        params.speed = 170.0 + (1.0 * world.difficulty_level as f32);
+        params.armor = 5.0 + (0.5 * world.difficulty_level as f32);
+        params.damage = 3.0 + (0.3 * world.difficulty_level as f32);
+        params.firerate = 1.0 + (0.5 * world.difficulty_level as f32);
+        params.firespeed = 450.0 + (1.0 * world.difficulty_level as f32);
+        return params;
+    }
+    pub fn enemy_gunner_settings( world: &mut World) -> EntityParams
+    {
+        let mut params = EntityParams::default();
+        params.health = 3.0 + (1.0 * world.difficulty_level as f32);
+        params.speed = 200.0 + (1.25 * world.difficulty_level as f32);
+        params.armor = 2.0 + (0.3 * world.difficulty_level as f32);
+        params.damage = 1.0 + (0.5 * world.difficulty_level as f32);
+        params.firerate = 2.0 + (0.6 * world.difficulty_level as f32);
+        params.firespeed = 450.0 + (1.0 * world.difficulty_level as f32);
+        return params;
+    }
+    pub fn enemy_heavygunner_settings( world: &mut World) -> EntityParams
     {
         let mut params = EntityParams::default();
         params.health = 5.0;
@@ -62,38 +111,7 @@ impl EntitySettings{
         params.damage = 2.0;
         return params;
     }
-    pub fn enemy_tank_settings() -> EntityParams
-    {
-        let mut params = EntityParams::default();
-        params.health = 20.0;
-        params.speed = 170.0;
-        params.armor = 5.0;
-        params.damage = 3.0;
-        params.firerate = 1.0;
-        params.firespeed = 450.0;
-        return params;
-    }
-    pub fn enemy_gunner_settings() -> EntityParams
-    {
-        let mut params = EntityParams::default();
-        params.health = 3.0;
-        params.speed = 200.0;
-        params.armor = 2.0;
-        params.damage = 1.0;
-        params.firerate = 2.0;
-        params.firespeed = 450.0;
-        return params;
-    }
-    pub fn enemy_heavygunner_settings() -> EntityParams
-    {
-        let mut params = EntityParams::default();
-        params.health = 5.0;
-        params.speed = 250.0;
-        params.armor = 2.0;
-        params.damage = 2.0;
-        return params;
-    }
-    pub fn enemy_exploder_settings() -> EntityParams
+    pub fn enemy_exploder_settings( world: &mut World) -> EntityParams
     {
         let mut params = EntityParams::default();
         params.health = 5.0;

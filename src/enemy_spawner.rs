@@ -27,12 +27,17 @@ impl EnemySpawner
             _ => { EnemyType::Default},
         };
 
+        // Spawn Duration based on Difficulty
+        let mut spawn_duration = 3.5 - (0.2 * world.difficulty_level as f32);
+        if spawn_duration <= 0.8 {spawn_duration = 0.8;}
+
+
         Self {
             entity: entity,
             spawner_type: enemy_type,
             spawn_count: count,
             spawned: 0,
-            spawn_duration: 3.5,
+            spawn_duration: spawn_duration,
             time: 0.2,
         }
     }

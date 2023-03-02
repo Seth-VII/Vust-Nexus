@@ -136,3 +136,41 @@ pub fn explosion_settings( color_1: Color,  color_2: Color , color_end: Color ) 
     params
 }
 
+pub fn destruction_settings( color_1: Color,  color_2: Color , color_end: Color) -> ParticleParams
+{
+    // XMin , XMax , YMin , YMax
+    // | Right X | Left -X |  Bottom Y | Top -Y |
+    let range = vec4(-150.0 , 150.0, -50.0, 150.0);
+
+    let mut params : ParticleParams = ParticleParams { 
+        spawn_rate: 500.0,
+        spawn_count: 20,
+
+        lifetime: 1.0,
+
+        color_begin: WHITE, 
+        color_end: color_end, 
+
+        size_begin: vec2(15.0, 15.0), 
+        size_end: vec2(0.0, 0.0), 
+        render_scale: 1.0,
+
+        position_begin: vec2(0.0, 0.0), 
+        position_end: vec2(0.0, 0.0), 
+        position_random_range: range,
+        position_random:  vec2(0.0, 0.0),
+
+        use_velocity: false,
+        spawn_position: vec2(0.0, 0.0), 
+        velocity: vec2(0.0, 0.0), 
+
+        rotation_begin: 0.0, 
+        rotation_end: 1.0,
+        
+        speed_begin: 6.0,
+        speed_end: 1.0,
+    };
+
+    params.randomize_color(color_1, color_2);
+    params
+}

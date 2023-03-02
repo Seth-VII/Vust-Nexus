@@ -139,6 +139,10 @@ impl Level
     }
     pub fn draw(& mut self)
     {
+        for trap_wall_element in self.leveldata.trapwalls.iter()
+        {
+            trap_wall_element.draw();
+        }
         for wall_element in self.leveldata.walls.iter()
         {
             wall_element.draw();
@@ -147,10 +151,7 @@ impl Level
         {
             blocking_wall_element.draw();
         }
-        for trap_wall_element in self.leveldata.trapwalls.iter()
-        {
-            trap_wall_element.draw();
-        }
+       
         for destructible_element in self.leveldata.destructibles.iter()
         {
             destructible_element.draw();
@@ -539,7 +540,7 @@ impl TrapWallElement
     }
     pub fn init(&mut self, world: &mut World)
     {
-        self.entity.entity_params = EntitySettings::trap_settings();
+        self.entity.entity_params = EntitySettings::trap_settings(world);
         self.entity.set_rect_color(MAGENTA);
         world.set_entity(&mut self.entity);
     }
@@ -586,7 +587,7 @@ impl DestructibleElement
 {
     pub fn new(world: &mut World) -> Self { 
         let mut entity = Entity::new("Destructible Wall", "Destructible", world);
-        entity.entity_params = EntitySettings::destructible_settings();
+        entity.entity_params = EntitySettings::destructible_settings(world);
 
         entity.set_rect_color(WHITE);
         entity.hit_feedback_timer = 0.001;
@@ -619,7 +620,10 @@ impl DestructibleElement
         {
             self.entity.is_active = false;
             self.entity.entity_params.health = 1.0;
-            world.particlesystem_pool.spawn_system_at_position( self.entity.transform.position, 64, explosion_settings(YELLOW, RED, color_u8!(255,255,0,0)));
+            world.particlesystem_pool.spawn_system_at_position( 
+                self.entity.transform.position, 
+                64, 
+                destruction_settings(LIGHTGRAY, WHITE, DARKGRAY));
             self.entity.transform = Transform::zero();
             world.set_entity(&mut self.entity);
             return;
@@ -689,7 +693,7 @@ impl EnemySpawnerElement
 {
     pub fn new(count: usize, spawner_type: usize,world: &mut World) -> Self { 
         let mut entity = Entity::new("EnemySpawner", "EnemySpawner", world);
-        entity.entity_params = EntitySettings::spawner_settings();
+        entity.entity_params = EntitySettings::spawner_settings(world);
 
         entity.hit_feedback_timer = 0.001;
         let spawner = EnemySpawner::create_spawner(count, spawner_type, world);
@@ -719,16 +723,10 @@ impl EnemySpawnerElement
     }
     pub fn update(&mut self, enemypool: &mut EnemyPool,world: &mut World)
     {
-        if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, -100.0)) 
+        if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, 100.0)) 
         {
             self.entity.in_view = true;
             self.entity.is_active = true;
-            if !self.sprite.animation_controller.get_statemachine_mut().animation_states[0].is_playing() &&
-            !self.sprite.animation_controller.get_statemachine_mut().animation_states[1].is_playing()
-            {
-                self.sprite.animation_controller.get_statemachine_mut().SetState(1);
-                self.sprite.animation_controller.play_anim_once();
-            }
         }else {
             self.entity.in_view = false;
             self.entity.is_active = false;
@@ -759,6 +757,16 @@ impl EnemySpawnerElement
             return;
         }
         self.entity.hit_cooldown();
+
+        if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, -100.0)) 
+        {
+            if !self.sprite.animation_controller.get_statemachine_mut().animation_states[0].is_playing() &&
+            !self.sprite.animation_controller.get_statemachine_mut().animation_states[1].is_playing()
+            {
+                self.sprite.animation_controller.get_statemachine_mut().SetState(1);
+                self.sprite.animation_controller.play_anim_once();
+            }
+        }
         if inside_windowborder_extended_sides(self.entity.transform.rect, world.level_offset, 200.0, vec2(200.0, -50.0)) 
         {
             self.sprite.animation_controller.update();
@@ -828,7 +836,7 @@ impl TurretElement
 {
     pub fn new(world: &mut World) -> Self { 
         let mut entity = Entity::new("Turret", "Turret", world);
-        entity.entity_params = EntitySettings::turret_settings();
+        entity.entity_params = EntitySettings::turret_settings(world);
 
         entity.set_rect_color(BLUE);
         entity.hit_feedback_timer = 0.001;

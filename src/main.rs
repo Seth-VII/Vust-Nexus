@@ -110,7 +110,7 @@ async fn main() {
 
         game.Run();
         
-        draw_text(format!("FPS: {}", get_fps()).as_str(), 30.0, 60.0, 30.0, WHITE);
+       
         draw_rectangle_lines(0.0, 0.0, screen_width(), screen_height(), 2.0, WHITE);
         draw_circle_lines(mouse_position().0, mouse_position().1, 5.0, 1.0, WHITE);
 

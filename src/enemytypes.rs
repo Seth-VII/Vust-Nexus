@@ -40,7 +40,7 @@ impl EnemyVariant
     fn default_variant(world: &mut World) -> Self
     {
         let sprite = world.assets.get_asset_by_id(1).get_texture_data();
-        let params = EntitySettings::enemy_default_settings();
+        let params = EntitySettings::enemy_default_settings(world);
 
         let mut size = vec2(80.0, 80.0);
         if sprite != Texture2D::empty()
@@ -53,7 +53,7 @@ impl EnemyVariant
 
         let weapon = None;
 
-        let points = 20;
+        let points = 20 + (5 * world.difficulty_level );
 
         Self { 
             params: params, 
@@ -72,7 +72,7 @@ impl EnemyVariant
     fn tank_variant(world: &mut World) -> Self
     {
         let sprite = world.assets.get_asset_by_id(0).get_texture_data();
-        let params = EntitySettings::enemy_tank_settings();
+        let params = EntitySettings::enemy_tank_settings(world);
 
         let mut size = vec2(120.0, 120.0);
         if sprite != Texture2D::empty()
@@ -87,7 +87,7 @@ impl EnemyVariant
         weapon.set_stats(params.damage, params.firerate, params.firespeed);
         world.set_entity(&mut weapon.entity);
 
-        let points = 50;
+        let points = 50 + (7 * world.difficulty_level);
 
         Self { 
             params: params, 
@@ -106,7 +106,7 @@ impl EnemyVariant
     fn gunner_variant(world: &mut World) -> Self
     {
         let sprite = world.assets.get_asset_by_id(2).get_texture_data();
-        let params = EntitySettings::enemy_gunner_settings();
+        let params = EntitySettings::enemy_gunner_settings(world);
 
         let mut size = vec2(80.0, 80.0);
         if sprite != Texture2D::empty()
@@ -121,7 +121,7 @@ impl EnemyVariant
         weapon.set_stats(params.damage, params.firerate, params.firespeed);
         world.set_entity(&mut weapon.entity);
 
-        let points = 10;
+        let points = 10 + (3 * world.difficulty_level);
 
         Self { 
             params: params, 

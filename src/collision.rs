@@ -28,7 +28,7 @@ pub fn inside_windowborder(rect: Rect, level_progress: f32, y_offset: f32) -> bo
 }
 pub fn inside_windowview(rect: Rect, level_progress: f32) -> bool
 {
-    rect.x > 0.0 - level_progress - 150.0 && rect.x + rect.w < GAME_SIZE_X + level_progress + 150.0 && 
+    rect.x > -150.0 + level_progress  && rect.x + rect.w < (GAME_SIZE_X + 150.0) + level_progress && 
     rect.y > 0.0 - 150.0 && rect.y + rect.h < GAME_SIZE_Y + 150.0
 }
 pub fn inside_windowborder_extended_sides(rect: Rect, level_progress: f32, y_offset: f32, x_extrension_range: Vec2) -> bool

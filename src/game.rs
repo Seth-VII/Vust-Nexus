@@ -1,5 +1,5 @@
 use macroquad::audio::{play_sound, PlaySoundParams};
-
+use interpolation::*;
 use super::*;
 pub struct Game
 {
@@ -13,6 +13,8 @@ pub struct Game
     local_score: i32,
     last_score: i32,
     high_score: i32,
+
+    player_settings: SavedEntitySettings,
 
     gamestate: GameState,
     //viewspace: Viewspace,
@@ -50,8 +52,7 @@ impl Game {
             self.load_level();
         }
 
-        // Draw Health Points
-        draw_text(format!("HP: {}",self.player.entity.entity_params.health).as_str(), 30.0 , 90.0, 30.0, WHITE);
+
 
         match self.gamestate
         {
@@ -311,11 +312,12 @@ impl Game {
         self.enemypool = EnemyPool::new();
         self.enemypool.create_pool(128, &mut self.world);
 
-        self.player = Player::new(&mut self.world);
+        self.player = Player::new(&mut self.world, &EntitySettings::player_settings());
         self.player.init(&mut self.world);
 
         self.local_score = 0;
         self.gamestate = GameState::GameRunning;
+        self.world.level_offset = -GAME_SIZE_X * 0.5;
     }
     pub async fn init() -> Self
     {
@@ -330,25 +332,26 @@ impl Game {
         camera.render_target = Some(game_render_target);
         set_camera(&camera);
 
-
+        
         // Create Game Systems
         let mut world = World::new().await;
-
+        
         let mut loader = LevelLoader::new();
         loader.level_loader_init().await;
 
 
         let mut misslepool = MisslePool::new();
         misslepool.create_pool(512, &mut world);
-
-
+        
+        
         let mut enemypool = EnemyPool::new();
         enemypool.create_pool(128, &mut world);
-
-
-        let mut player = Player::new(&mut world);
+        
+        
+        let mut player_settings = SavedEntitySettings::new();
+        player_settings.save(EntitySettings::player_settings());
+        let mut player = Player::new(&mut world, &player_settings.get_settings());
         player.init(&mut world);
-
         
         // Setup Game Data
         Self {
@@ -361,6 +364,7 @@ impl Game {
 
             gamestate: GameState::MainMenu,
 
+            player_settings: player_settings,
             //viewspace: viewspace,
             camera: camera,
             render_target: game_render_target,
@@ -400,6 +404,7 @@ impl Game {
         // Update Player
         self.player.update(&mut self.world);
         self.player.shoot(&mut self.misslepool, &mut self.world);
+        self.player_settings.save(self.player.entity.entity_params);
         self.level_update();
 
     }
@@ -430,15 +435,29 @@ impl Game {
         self.misslepool.draw();
         self.enemypool.draw();
         
+        // Draw Background Panel
+        draw_rectangle(self.world.level_offset, 0.0, GAME_SIZE_X, 60.0, color_u8!(0,0,0,190));
+
         // Draw Score UI
         let text = format!("Local Score: {}", self.local_score);
         let text_size =  50.0;
         let text_width = text.chars().count() as f32 * text_size;
         let centered_position_x = ( GAME_SIZE_X * 0.5) - ( text_width * 0.2) + self.world.level_offset;
-        let x_padding = GAME_SIZE_X * 0.5 - 250.0; 
-        draw_rectangle(x_padding + self.world.level_offset, 0.0, GAME_SIZE_X - (x_padding*2.0), 60.0, color_u8!(0,0,0,100));
-        draw_text(text.as_str(),centered_position_x, 50.0, text_size, WHITE);
+        draw_text(text.as_str(),centered_position_x, 40.0, text_size, WHITE);
 
+        // Draw Health Points
+        let health_rect_width = f32::lerp(&0.0, &250.0, &(self.player.entity.entity_params.health * 0.01));
+
+        draw_rectangle(self.world.level_offset + 300.0, 15.0, 250.0, 15.0, color_u8!(64,0,32,255));
+        draw_rectangle(self.world.level_offset + 300.0, 16.0, health_rect_width, 13.0, color_u8!(255,0,128,255));
+        draw_text(format!("HP: {}",self.player.entity.entity_params.health).as_str(), 570.0 + self.world.level_offset , 30.0, 30.0, WHITE);
+        // Draw FPS
+        draw_text(format!("FPS: {}", get_fps()).as_str(), 5.0 + self.world.level_offset, 30.0, 25.0, WHITE);
+
+
+        // Draw Difficulty & Current Stage
+        draw_text(format!("Difficulty Level: {}", self.world.difficulty_level + 1).as_str(), (GAME_SIZE_X * 0.5 + 500.0) + self.world.level_offset, 30.0, 25.0, WHITE);
+        draw_text(format!("Stage: {} / {}", self.selected_level, self.world.available_levels).as_str(), (GAME_SIZE_X * 0.5 + 300.0) + self.world.level_offset, 30.0, 25.0, WHITE);
     }
 
     pub fn update_score(&mut self)
@@ -451,23 +470,33 @@ impl Game {
         if self.selected_level < self.available_levels -1
         {
             self.selected_level += 1;
+            // Add 10 Healthpoints at the end of each Stage
+            let mut player_settings = self.player_settings.get_settings();
+            player_settings.health += 10.0;
+            self.player_settings.save(player_settings);
         }else {
             self.selected_level = 0;
+            // Increase Difficulty after Level
+            self.world.difficulty_level += 1;
         }
+        // Load Level
         println!("selected {} / available {}", self.selected_level, self.available_levels);
         self.load_level();
 
+        // Load Entities
         self.misslepool = MisslePool::new();
         self.misslepool.create_pool(512, &mut self.world);
         
         self.enemypool = EnemyPool::new();
         self.enemypool.create_pool(128, &mut self.world);
         
-        self.player = Player::new(&mut self.world);
+        self.player = Player::new(&mut self.world, &self.player_settings.get_settings());
         self.player.init(&mut self.world);
 
         self.gamestate = GameState::GameRunning;
         println!("Count: {}", self.world.entities.len());
+
+        self.world.level_offset = -GAME_SIZE_X * 0.5;
     }
 
     
